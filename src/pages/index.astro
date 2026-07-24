@@ -1,20 +1,59 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const posts = await Astro.glob('../content/*.md');
+posts.sort((a, b) => new Date(b.frontmatter.pubDate).valueOf() - new Date(a.frontmatter.pubDate).valueOf());
 ---
 
 <BaseLayout 
   title="PulseNews | L'actualité en temps réel & Analyses" 
   description="Plateforme d'information haute performance, conçue pour une vitesse maximale et optimisée pour les moteurs de recherche Google et l'IA."
 >
-  <section style="text-align: center; padding: 3rem 0;">
-    <div style="display: inline-block; padding: 0.35rem 1rem; background: rgba(225, 29, 72, 0.15); border: 1px solid var(--accent); border-radius: 50px; color: var(--accent); font-size: 0.85rem; font-weight: 600; margin-bottom: 1.5rem;">
-      • SEO Ultra-Optimisé & GEO Compatible
+  <section style="padding: 2rem 0 3rem 0; border-bottom: 1px solid var(--border); margin-bottom: 3rem;">
+    <div style="display: inline-block; padding: 0.35rem 1rem; background: rgba(225, 29, 72, 0.15); border: 1px solid var(--accent); border-radius: 50px; color: var(--accent); font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem;">
+      • Fil d'Actualité en Temps Réel
     </div>
-    <h1 style="font-size: 3rem; font-weight: 800; color: var(--text-bright); line-height: 1.2; margin-bottom: 1rem;">
-      PulseNews
+    <h1 style="font-size: 2.8rem; font-weight: 800; color: var(--text-bright); line-height: 1.2; margin-bottom: 0.75rem;">
+      À la Une sur PulseNews
     </h1>
-    <p style="font-size: 1.25rem; color: #9ca3af; max-width: 680px; margin: 0 auto;">
-      Votre source d'information rapide, fiable et structurée pour les moteurs de recherche et les intelligences artificielles.
+    <p style="font-size: 1.15rem; color: #9ca3af; max-width: 650px;">
+      Informed, fast, and structured for modern search engines and AI agents.
     </p>
+  </section>
+
+  <section>
+    <div style="display: grid; gap: 2rem;">
+      {posts.map((post) => {
+        const slug = post.file.split('/').pop().replace('.md', '');
+        const { title, description, pubDate, category = 'Actualités' } = post.frontmatter;
+        const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+
+        return (
+          <article style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; transition: transform 0.2s;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <span style="color: var(--accent); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">
+                {category}
+              </span>
+              <time style="font-size: 0.85rem; color: #6b7280;">{formattedDate}</time>
+            </div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem;">
+              <a href={`/news/${slug}`} style="color: var(--text-bright); text-decoration: none;">
+                {title}
+              </a>
+            </h2>
+            <p style="color: #9ca3af; font-size: 1rem; line-height: 1.6; margin-bottom: 1.25rem;">
+              {description}
+            </p>
+            <a href={`/news/${slug}`} style="color: var(--accent); font-weight: 600; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+              Lire l'article complet &rarr;
+            </a>
+          </article>
+        );
+      })}
+    </div>
   </section>
 </BaseLayout>
