@@ -1,0 +1,85 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const posts = await Astro.glob('../../content/*.md');
+  return posts.map((post) => {
+    const slug = post.file.split('/').pop().replace('.md', '');
+    return {
+      params: { slug },
+      props: { post },
+    };
+  });
+}
+
+const { post } = Astro.props;
+const { Content } = post;
+const { title, description, pubDate, author = 'Rédaction PulseNews', category = 'Actualités' } = post.frontmatter;
+
+const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+});
+---
+
+<BaseLayout title={`${title} | PulseNews`} description={description} type="article">
+  <article style="max-width: 760px; margin: 0 auto; padding: 1rem 0;">
+    <div style="margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem;">
+      <span style="display: inline-block; padding: 0.25rem 0.75rem; background: rgba(225, 29, 72, 0.15); border: 1px solid var(--accent); border-radius: 20px; color: var(--accent); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 1rem;">
+        {category}
+      </span>
+      <h1 style="font-size: 2.4rem; font-weight: 800; color: var(--text-bright); line-height: 1.25; margin-bottom: 1rem;">
+        {title}
+      </h1>
+      <p style="font-size: 1.15rem; color: #9ca3af; margin-bottom: 1.5rem; line-height: 1.5;">
+        {description}
+      </p>
+      <div style="display: flex; gap: 1.5rem; font-size: 0.9rem; color: #6b7280; font-weight: 500;">
+        <span>Par <strong style="color: var(--text-bright);">{author}</strong></span>
+        <span>•</span>
+        <time datetime={pubDate}>{formattedDate}</time>
+      </div>
+    </div>
+
+    <div class="article-content">
+      <Content />
+    </div>
+  </article>
+
+  <style is:global>
+    .article-content {
+      font-size: 1.125rem;
+      line-height: 1.8;
+      color: #d1d5db;
+    }
+    .article-content h2 {
+      font-size: 1.75rem;
+      color: var(--text-bright);
+      margin: 2.5rem 0 1rem 0;
+      border-left: 3px solid var(--accent);
+      padding-left: 0.75rem;
+    }
+    .article-content h3 {
+      font-size: 1.35rem;
+      color: var(--text-bright);
+      margin: 2rem 0 0.75rem 0;
+    }
+    .article-content p {
+      margin-bottom: 1.5rem;
+    }
+    .article-content ul, .article-content ol {
+      margin: 0 0 1.5rem 1.5rem;
+    }
+    .article-content li {
+      margin-bottom: 0.5rem;
+    }
+    .article-content blockquote {
+      border-left: 4px solid var(--border);
+      padding-left: 1rem;
+      margin: 1.5rem 0;
+      font-style: italic;
+      color: #9ca3af;
+    }
+  </style>
+</BaseLayout>
