@@ -106,8 +106,11 @@ const { title, description, type = 'website' } = Astro.props;
     <main>
       <slot />
     </main>
-    <footer>
-      <p>&copy; {new Date().getFullYear()} PulseNews. Tous droits réservés.</p>
-    </footer>
-  </body>
-</html>
+   <footer style="margin-top: 5rem; padding: 2rem 0; border-top: 1px solid var(--border); text-align: center; color: #6b7280; font-size: 0.9rem;">
+    <div style="display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+      <a href="/mentions-legales" style="color: #9ca3af; text-decoration: none;">Mentions Légales</a>
+      <a href="/politique-de-confidentialite" style="color: #9ca3af; text-decoration: none;">Politique de Confidentialité</a>
+      <a href="/contact" style="color: #9ca3af; text-decoration: none;">Contact</a>
+    </div>
+    <p>&copy; 2026 PulseNews. Tous droits réservés.</p>
+  </footer>
