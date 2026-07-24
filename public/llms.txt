@@ -1,6 +1,6 @@
-# pulse-news
+# PulseNews
 
-> Plateforme web optimisée pour le référencement naturel (SEO) et la citation par les intelligences artificielles (GEO).
+> Plateforme d'information et d'actualités en temps réel, optimisée pour un chargement instantané, le référencement naturel (SEO) et la citation par les intelligences artificielles (GEO).
 
 ## Navigation
-- [/]: Page d'accueil et présentation.
+- [/]: Page d'accueil, fil d'actualités et publications récentes.
