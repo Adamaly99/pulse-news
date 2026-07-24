@@ -2,6 +2,6 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  site: 'https://mon-site-pro.vercel.app',
+  site: 'https://pulse-news.vercel.app',
   integrations: [sitemap()],
 });
