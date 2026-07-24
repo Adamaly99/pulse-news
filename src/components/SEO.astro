@@ -27,7 +27,7 @@ const schemaData = {
     "name": "PulseNews",
     "logo": {
       "@type": "ImageObject",
-      "url": new URL('/favicon.svg', Astro.url).toString()
+      "url": new URL('/favicon.svg', Astro.site || Astro.url).toString()
     }
   }
 };
@@ -52,5 +52,5 @@ const schemaData = {
 <meta property="twitter:description" content={description} />
 <meta property="twitter:image" content={image} />
 
-<!-- Schema.org JSON-LD (SEO & GEO Google/IA) -->
-<script type="application/ld+json" set:html={JSON.stringify(schemaData)} />
+<!-- Schema.org JSON-LD -->
+<script type="application/ld+json" set:html={JSON.stringify(schemaData)}></script>
