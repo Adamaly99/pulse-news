@@ -11,4 +11,4 @@ Allow: /
 User-agent: PerplexityBot
 Allow: /
 
-Sitemap: https://mon-site-pro.vercel.app/sitemap-index.xml
+Sitemap: https://pulse-news.vercel.app/sitemap-index.xml
