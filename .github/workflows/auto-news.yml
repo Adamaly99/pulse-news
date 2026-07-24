@@ -4,7 +4,7 @@ on:
   schedule:
     # S'exécute toutes les 2 heures
     - cron: '0 */2 * * *'
-  # Permet aussi de lancer manuellement depuis l'onglet Actions
+  # Permet de relancer manuellement depuis l'onglet Actions
   workflow_dispatch:
 
 jobs:
@@ -17,11 +17,10 @@ jobs:
       - name: Configuration de Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 22
 
       - name: Installation des dépendances
-        run: npm ci
+        run: npm install
 
       - name: Exécution du script de rédaction
         env:
