@@ -20,6 +20,36 @@ function slugify(text) {
     .slice(0, 50);
 }
 
+// Notification instantanée via IndexNow
+async function pingIndexNow(slug) {
+  const domain = 'pulse-news-three.vercel.app';
+  const apiKey = 'pulsenews2026indexnowkey';
+  const articleUrl = `https://${domain}/news/${slug}`;
+
+  const payload = {
+    host: domain,
+    key: apiKey,
+    keyLocation: `https://${domain}/${apiKey}.txt`,
+    urlList: [articleUrl]
+  };
+
+  try {
+    const response = await fetch('https://api.indexnow.org/indexnow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok || response.status === 202) {
+      console.log(`🚀 IndexNow : Notification envoyée avec succès pour ${articleUrl}`);
+    } else {
+      console.log(`⚠️ IndexNow : Réponse serveur (${response.status})`);
+    }
+  } catch (err) {
+    console.error('❌ Échec de la notification IndexNow :', err.message);
+  }
+}
+
 async function run() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -106,6 +136,9 @@ category: "Technologie"
 
   fs.writeFileSync(filePath, markdownContent, 'utf-8');
   console.log(`✅ Article créé avec succès : src/content/${fileName}`);
+
+  // Notification instantanée IndexNow
+  await pingIndexNow(targetSlug);
 }
 
 run().catch(err => {
