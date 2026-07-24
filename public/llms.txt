@@ -1,0 +1,6 @@
+# pulse-news
+
+> Plateforme web optimisée pour le référencement naturel (SEO) et la citation par les intelligences artificielles (GEO).
+
+## Navigation
+- [/]: Page d'accueil et présentation.
