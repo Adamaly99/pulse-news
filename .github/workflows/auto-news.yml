@@ -4,8 +4,10 @@ on:
   schedule:
     # S'exécute toutes les 2 heures
     - cron: '0 */2 * * *'
-  # Permet de relancer manuellement depuis l'onglet Actions
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-and-publish:
