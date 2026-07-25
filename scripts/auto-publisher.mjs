@@ -59,7 +59,7 @@ Rédige une analyse journalistique approfondie (600 à 800 mots) basée sur l'ac
 Titre : "${selectedItem.title}"
 Lien d'origine : "${selectedItem.link}"
 Source d'origine : "${selectedItem.creator || selectedItem.source || 'Presse Spécialisée'}"
-
+S'assurer que l'angle de l'article est unique et ne traite pas d'un sujet déjà couvert très récemment si la source est similaire."
 CONSIGNES STRICTES DE FORMATAGE (EEAT / GEO / SEO) :
 1. Formatage direct en Markdown avec le bloc Frontmatter YAML exact ci-dessous.
 2. La catégorie doit être EXACTEMENT l'une des suivantes : [${CATEGORIES.join(', ')}].
