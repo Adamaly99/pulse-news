@@ -1,0 +1,80 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const authors = [
+  {
+    name: "Alexandre Dupont",
+    role: "Rédacteur en Chef & Analyste Tech",
+    bio: "Ingénieur logiciel de formation, spécialiste des architectures Cloud et des enjeux d'éthique de l'Intelligence Artificielle.",
+    specialties: ["Intelligence Artificielle", "Cloud", "Open Source"],
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    name: "Sarah Martin",
+    role: "Journaliste Cybersécurité & Mobile",
+    bio: "Spécialiste de la confidentialité numérique, de la protection des données (RGPD) et des écosystèmes Android et iOS.",
+    specialties: ["Cybersécurité", "Smartphones", "Android"],
+    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80"
+  }
+];
+
+const teamSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "PulseNews",
+  "url": "https://pulse-news-three.vercel.app",
+  "publishingPrinciples": "https://pulse-news-three.vercel.app/a-propos",
+  "correctionsPolicy": "https://pulse-news-three.vercel.app/equipe",
+  "member": authors.map(a => ({
+    "@type": "Person",
+    "name": a.name,
+    "jobTitle": a.role,
+    "description": a.bio
+  }))
+};
+---
+
+<BaseLayout title="Salle de Rédaction & Équipe | PulseNews" description="Découvrez l'équipe éditoriale de PulseNews, notre politique de fact-checking et nos engagements de transparence.">
+  <script type="application/ld+json" set:html={JSON.stringify(teamSchema)} />
+
+  <main style="max-width: 900px; margin: 0 auto; padding: 2.5rem 1rem; color: #cbd5e1; line-height: 1.8;">
+    
+    <header style="border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2.5rem;">
+      <h1 style="font-size: 2.4rem; color: var(--text-bright); margin-bottom: 0.5rem;">Notre Salle de Rédaction</h1>
+      <p style="font-size: 1.1rem; color: #9ca3af;">L'exigence d'une information technique vérifiée, neutre et accessible.</p>
+    </header>
+
+    <section style="margin-bottom: 3rem;">
+      <h2 style="color: var(--accent); font-size: 1.6rem; margin-bottom: 1.5rem;">Équipe Éditoriale</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+        {authors.map(author => (
+          <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; display: flex; gap: 1rem; align-items: flex-start;">
+            <img src={author.avatar} alt={author.name} style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent);" />
+            <div>
+              <h3 style="margin: 0; color: var(--text-bright); font-size: 1.1rem;">{author.name}</h3>
+              <p style="color: var(--accent); font-size: 0.85rem; margin: 0.2rem 0 0.5rem 0;">{author.role}</p>
+              <p style="font-size: 0.88rem; color: #9ca3af; margin-bottom: 0.8rem;">{author.bio}</p>
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                {author.specialties.map(s => (
+                  <span style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; color: #cbd5e1;">{s}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-bottom: 3rem;">
+      <h2 style="color: var(--text-bright); font-size: 1.5rem; margin-top: 0;">Méthodologie de Fact-Checking & Révision</h2>
+      <p>Chaque article publié par <strong>PulseNews</strong> suit un protocole strict d'examen des faits :</p>
+      <ol style="padding-left: 1.2rem; color: #9ca3af;">
+        <li style="margin-bottom: 0.5rem;"><strong style="color: #e2e8f0;">Recoupement des sources :</strong> Aucune affirmation technique n'est publiée sans la vérification préalable de deux sources indépendantes ou de la documentation officielle de l'éditeur.</li>
+        <li style="margin-bottom: 0.5rem;"><strong style="color: #e2e8f0;">Distinction Faits vs Spéculations :</strong> Les rumeurs d'industrie sont explicitement identifiées comme telles avec un niveau de certitude indiqué au lecteur.</li>
+        <li style="margin-bottom: 0.5rem;"><strong style="color: #e2e8f0;">Politique de Correction des Erreurs :</strong> Si une imprécision est détectée post-publication, l'article est immédiatement mis à jour avec une note de transparence précisant la nature de la modification.</li>
+      </ol>
+    </section>
+
+  </main>
+</BaseLayout>
+
