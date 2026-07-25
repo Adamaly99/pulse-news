@@ -1,4 +1,6 @@
 ---
+import ReaderExperience from '../../components/ReaderExperience.astro';
+
 import RelatedArticles from '../../components/RelatedArticles.astro';
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
@@ -111,6 +113,23 @@ const breadcrumbSchema = {
         <span style="background: rgba(16,185,129,0.1); color: #10b981; padding: 2px 8px; border-radius: 4px;">Analyse Vérifiée EEAT</span>
       </div>
     </header>
+    {post.frontmatter.image && (
+      <div style="margin-bottom: 2rem; border-radius: 12px; overflow: hidden; border: 1px solid var(--border);">
+        <img 
+          src={post.frontmatter.image} 
+          alt={title} 
+          width="1200"
+          height="630"
+          loading="eager"
+          decoding="async"
+          style="width: 100%; height: auto; max-height: 420px; object-fit: cover; display: block;" 
+        />
+      </div>
+    )}
+
+    <!-- Module d'expérience de lecture -->
+    <ReaderExperience contentText={post.rawContent ? post.rawContent() : ''} />
+
 
     {keyTakeaways && keyTakeaways.length > 0 && (
       <div style="background: var(--card-bg); border-left: 4px solid var(--accent); border: 1px solid var(--border); border-left-width: 4px; padding: 1.25rem 1.5rem; border-radius: 8px; margin-bottom: 2.5rem;">
