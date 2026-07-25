@@ -1,147 +1,153 @@
-import Parser from 'rss-parser';
+import RssParser from 'rss-parser';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
 import path from 'path';
 
-const parser = new Parser();
+const parser = new RssParser();
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Flux RSS d'actualités (Tech & Innovation)
-const RSS_FEED_URL = 'https://news.google.com/rss/search?q=technologie+IA+innovation&hl=fr&gl=FR&ceid=FR:fr';
+const RSS_FEEDS = [
+  'https://news.google.com/rss/search?q=technology+AI+software&hl=fr&gl=FR&ceid=FR:fr',
+  'https://news.google.com/rss/search?q=android+apple+cybersecurite&hl=fr&gl=FR&ceid=FR:fr'
+];
 
-// Nettoyage des titres pour créer des noms de fichiers valides
-function slugify(text) {
-  return text
-    .toString()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9 -]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .slice(0, 50);
-}
-
-// Notification instantanée via IndexNow
-async function pingIndexNow(slug) {
-  const domain = 'pulse-news-three.vercel.app';
-  const apiKey = 'pulsenews2026indexnowkey';
-  const articleUrl = `https://${domain}/news/${slug}`;
-
-  const payload = {
-    host: domain,
-    key: apiKey,
-    keyLocation: `https://${domain}/${apiKey}.txt`,
-    urlList: [articleUrl]
-  };
-
-  try {
-    const response = await fetch('https://api.indexnow.org/indexnow', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      body: JSON.stringify(payload)
-    });
-
-    if (response.ok || response.status === 202) {
-      console.log(`🚀 IndexNow : Notification envoyée avec succès pour ${articleUrl}`);
-    } else {
-      console.log(`⚠️ IndexNow : Réponse serveur (${response.status})`);
-    }
-  } catch (err) {
-    console.error('❌ Échec de la notification IndexNow :', err.message);
-  }
-}
+const CATEGORIES = [
+  'intelligence-artificielle', 'android', 'apple', 'google', 
+  'microsoft', 'cybersecurite', 'robotique', 'cloud', 
+  'open-source', 'startups', 'smartphones'
+];
 
 async function run() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.error("❌ ERREUR : La clé GEMINI_API_KEY est manquante.");
-    process.exit(1);
-  }
-
-  console.log("📡 Récupération du flux RSS...");
-  const feed = await parser.parseURL(RSS_FEED_URL);
+  console.log("🔍 Recherche des dernières actualités...");
   
-  const contentDir = path.join(process.cwd(), 'src', 'content');
-  if (!fs.existsSync(contentDir)) {
-    fs.mkdirSync(contentDir, { recursive: true });
-  }
-
-  const existingFiles = fs.readdirSync(contentDir);
-
-  // Recherche de la première actualité non encore publiée
-  let targetItem = null;
-  let targetSlug = '';
-
-  for (const item of feed.items) {
-    const candidateSlug = slugify(item.title);
-    const exists = existingFiles.some(file => file.includes(candidateSlug));
-    if (!exists && candidateSlug.length > 10) {
-      targetItem = item;
-      targetSlug = candidateSlug;
-      break;
+  let selectedItem = null;
+  for (const feedUrl of RSS_FEEDS) {
+    try {
+      const feed = await parser.parseURL(feedUrl);
+      if (feed.items && feed.items.length > 0) {
+        selectedItem = feed.items[0];
+        break;
+      }
+    } catch (e) {
+      console.error(`Erreur lecture flux ${feedUrl}:`, e.message);
     }
   }
 
-  if (!targetItem) {
-    console.log("ℹ️ Aucune nouvelle actualité inédite trouvée pour le moment.");
+  if (!selectedItem) {
+    console.log("Aucun article trouvé dans les flux RSS.");
     return;
   }
 
-  console.log(`📰 Rédaction de l'article sur : "${targetItem.title}"`);
+  console.log(`📰 Sujet sélectionné : ${selectedItem.title}`);
 
-  // Prompt strict pour garantir la qualité Anti-Bannissement EEAT
+  // Utilisation du modèle Gemini 2.5 Flash
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
   const prompt = `
-Tu es un journaliste senior spécialisé en technologie pour le média PulseNews.
-À partir de ce sujet d'actualité : "${targetItem.title}" et de son résumé : "${targetItem.contentSnippet || ''}".
+Tu es le rédacteur en chef senior du média technologique francophone "PulseNews".
+Rédige un article complet, analytique, neutre et hautement informatif à partir de cette actualité :
+Titre : "${selectedItem.title}"
+Lien d'origine : "${selectedItem.link}"
+Source d'origine : "${selectedItem.creator || selectedItem.source || 'Presse Tech'}"
 
-Rédige un article complet, analytique et informatif. Respecte STRICTEMENT les règles suivantes :
-1. Rédige entre 400 et 600 mots.
-2. Utilise un ton neutre, professionnel et journalistique.
-3. Ne cite JAMAIS que tu es une IA.
-4. Structure l'article avec un chapeau d'introduction, au moins deux titres H2 (##) et une conclusion.
-5. Formate la réponse EXCLUSIVEMENT sous la forme du bloc frontmatter YAML ci-dessous suivi du corps en Markdown :
+CONSIGNES STRICTES DE RÉDACTION ET STRUCTURE :
+1. Rédige l'article directement au format Markdown avec le Frontmatter YAML en haut.
+2. La catégorie doit être EXACTEMENT l'une des suivantes : [${CATEGORIES.join(', ')}].
+3. Rédige un contenu riche d'environ 500 à 700 mots.
+
+FORMAT OBLIGATOIRE DU FICHIER :
 
 ---
-title: "Un titre percutant et optimisé SEO en français"
-description: "Une méta-description engageante de 150 caractères maximum."
-pubDate: "${new Date().toISOString().split('T')[0]}"
+title: "Titre percutant et informatif (max 70 chars)"
+description: "Résumé accrocheur pour les moteurs de recherche et réseaux (140-160 chars)"
+pubDate: "${new Date().toISOString()}"
+category: "choisir_une_categorie_de_la_liste"
 author: "Rédaction PulseNews"
-category: "Technologie"
+sourceName: "${selectedItem.creator || selectedItem.source || 'Presse Tech'}"
+sourceUrl: "${selectedItem.link}"
+keyTakeaways:
+  - "Point clé 1"
+  - "Point clé 2"
+  - "Point clé 3"
+  - "Point clé 4"
+  - "Point clé 5"
+faq:
+  - question: "Question fréquente 1 ?"
+    answer: "Réponse claire et précise."
+  - question: "Question fréquente 2 ?"
+    answer: "Réponse claire et précise."
 ---
 
-[Corps de l'article en Markdown ici]
+## Introduction & Contexte
+(Présentation claire des faits récents, du contexte et des acteurs impliqués)
+
+## À retenir
+(Synthèse en quelques phrases)
+
+## Notre Analyse
+(Analyse approfondie : Pourquoi cette information est importante ? Ce qui est confirmé vs incertitudes ? Impact sur l'industrie et les utilisateurs ?)
+
+## Avantages, Limites et Risques
+(Détail des points forts, des faiblesses ou des risques liés à cette nouveauté)
+
+## Ce que cela change pour les utilisateurs
+(Conséquences pratiques et concrètes au quotidien)
+
+## Définitions & Glossaire
+(Explication simple des 2-3 termes techniques clés mentionnés dans l'article)
+
+## Sources et Références
+Article basé sur les informations publiées par **${selectedItem.creator || selectedItem.source || 'Presse Tech'}**.
 `;
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }]
-    })
-  });
+  const result = await model.generateContent(prompt);
+  let articleContent = result.response.text();
 
-  const data = await response.json();
-  
-  if (!data.candidates || !data.candidates[0]?.content?.parts[0]?.text) {
-    console.error("❌ ERREUR API Gemini :", JSON.stringify(data));
-    process.exit(1);
+  // Nettoyage des balises de code Markdown globales si retournées par l'API
+  articleContent = articleContent.replace(/^```markdown\n/, '').replace(/^```\n/, '').replace(/\n```$/, '');
+
+  // Génération du nom de fichier unique
+  const slug = selectedItem.title
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '')
+    .slice(0, 60);
+
+  const filename = `${Date.now()}-${slug}.md`;
+  const targetDir = path.join(process.cwd(), 'src', 'content');
+
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
   }
 
-  let markdownContent = data.candidates[0].content.parts[0].text;
+  const filePath = path.join(targetDir, filename);
+  fs.writeFileSync(filePath, articleContent, 'utf-8');
+  console.log(`✅ Article créé avec succès : ${filePath}`);
 
-  // Nettoyage si le modèle renvoie des balises de code Markdown ```markdown
-  markdownContent = markdownContent.replace(/^```markdown\n/, '').replace(/```$/, '').trim();
+  // Notification IndexNow (Ping instantané)
+  try {
+    const siteUrl = '[https://pulse-news-three.vercel.app](https://pulse-news-three.vercel.app)';
+    const articleUrl = `${siteUrl}/news/${filename.replace('.md', '')}`;
+    const indexNowKey = 'pulsenews2026indexnowkey';
 
-  const fileName = `${Date.now()}-${targetSlug}.md`;
-  const filePath = path.join(contentDir, fileName);
+    const indexNowPayload = {
+      host: 'pulse-news-three.vercel.app',
+      key: indexNowKey,
+      keyLocation: `${siteUrl}/${indexNowKey}.txt`,
+      urlList: [articleUrl]
+    };
 
-  fs.writeFileSync(filePath, markdownContent, 'utf-8');
-  console.log(`✅ Article créé avec succès : src/content/${fileName}`);
+    const response = await fetch('[https://api.indexnow.org/indexnow](https://api.indexnow.org/indexnow)', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(indexNowPayload)
+    });
 
-  // Notification instantanée IndexNow
-  await pingIndexNow(targetSlug);
+    console.log(`📡 Ping IndexNow exécuté pour ${articleUrl} (Statut: ${response.status})`);
+  } catch (err) {
+    console.error("⚠️ Erreur lors du ping IndexNow :", err.message);
+  }
 }
 
-run().catch(err => {
-  console.error("❌ Erreur fatale :", err);
-  process.exit(1);
-});
+run();
