@@ -1,0 +1,66 @@
+---
+const { contentText = "" } = Astro.props;
+
+// Calcul automatique du temps de lecture (moyenne 200 mots/min)
+const wordCount = contentText.split(/\s+/).length;
+const readTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
+---
+
+<div id="reader-experience-bar" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.85rem; color: #9ca3af;">
+  <span style="display: flex; align-items: center; gap: 0.4rem;">
+    ⏱️ Temps de lecture : <strong style="color: var(--text-bright);">{readTimeMinutes} min</strong> ({wordCount} mots)
+  </span>
+
+  <button id="share-btn" style="background: var(--accent); color: white; border: none; padding: 4px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 0.3rem;">
+    📤 Partager
+  </button>
+</div>
+
+<!-- Barre de progression de défilement fixe en haut de page -->
+<div id="reading-progress-container" style="position: fixed; top: 0; left: 0; width: 100%; height: 4px; background: transparent; z-index: 100;">
+  <div id="reading-progress-bar" style="height: 100%; width: 0%; background: var(--accent); transition: width 0.1s ease-out;"></div>
+</div>
+
+<!-- Bouton Retour en Haut -->
+<button id="back-to-top" aria-label="Retour en haut" style="position: fixed; bottom: 20px; right: 20px; background: var(--card-bg); border: 1px solid var(--border); color: var(--text-bright); width: 42px; height: 42px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 90; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+  ↑
+</button>
+
+<script>
+  // Barre de progression
+  window.addEventListener('scroll', () => {
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const scrolled = (winScroll / height) * 100;
+    const progressBar = document.getElementById('reading-progress-bar');
+    if (progressBar) progressBar.style.width = scrolled + '%';
+
+    // Bouton retour en haut
+    const backToTop = document.getElementById('back-to-top');
+    if (backToTop) {
+      backToTop.style.display = winScroll > 300 ? 'flex' : 'none';
+    }
+  });
+
+  document.getElementById('back-to-top')?.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // Bouton Partage Natif
+  document.getElementById('share-btn')?.addEventListener('click', async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: document.title,
+          url: window.location.href
+        });
+      } catch (err) {
+        console.log('Partage annulé');
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Lien de l\'article copié dans le presse-papier !');
+    }
+  });
+</script>
+
