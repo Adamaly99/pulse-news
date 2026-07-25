@@ -1,13 +1,11 @@
-import RssParser from 'rss-parser';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Parser from 'rss-parser';
 import fs from 'fs';
 import path from 'path';
 
-const parser = new RssParser();
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const parser = new Parser();
 
 const RSS_FEEDS = [
-  'https://news.google.com/rss/search?q=technology+AI+software&hl=fr&gl=FR&ceid=FR:fr',
+  'https://news.google.com/rss/search?q=technologie+IA+innovation&hl=fr&gl=FR&ceid=FR:fr',
   'https://news.google.com/rss/search?q=android+apple+cybersecurite&hl=fr&gl=FR&ceid=FR:fr'
 ];
 
@@ -18,6 +16,12 @@ const CATEGORIES = [
 ];
 
 async function run() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.error("❌ ERREUR : La clé GEMINI_API_KEY est manquante.");
+    process.exit(1);
+  }
+
   console.log("🔍 Recherche des dernières actualités...");
   
   let selectedItem = null;
@@ -34,14 +38,11 @@ async function run() {
   }
 
   if (!selectedItem) {
-    console.log("Aucun article trouvé dans les flux RSS.");
+    console.log("ℹ️ Aucun article trouvé dans les flux RSS.");
     return;
   }
 
   console.log(`📰 Sujet sélectionné : ${selectedItem.title}`);
-
-  // Utilisation du modèle Gemini 2.5 Flash
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const prompt = `
 Tu es le rédacteur en chef senior du média technologique francophone "PulseNews".
@@ -58,9 +59,9 @@ CONSIGNES STRICTES DE RÉDACTION ET STRUCTURE :
 FORMAT OBLIGATOIRE DU FICHIER :
 
 ---
-title: "Titre percutant et informatif (max 70 chars)"
+title: "Titre percutant et informatif en français (max 70 chars)"
 description: "Résumé accrocheur pour les moteurs de recherche et réseaux (140-160 chars)"
-pubDate: "${new Date().toISOString()}"
+pubDate: "${new Date().toISOString().split('T')[0]}"
 category: "choisir_une_categorie_de_la_liste"
 author: "Rédaction PulseNews"
 sourceName: "${selectedItem.creator || selectedItem.source || 'Presse Tech'}"
@@ -100,19 +101,30 @@ faq:
 Article basé sur les informations publiées par **${selectedItem.creator || selectedItem.source || 'Presse Tech'}**.
 `;
 
-  const result = await model.generateContent(prompt);
-  let articleContent = result.response.text();
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }]
+    })
+  });
 
-  // Nettoyage des balises de code Markdown globales si retournées par l'API
-  articleContent = articleContent.replace(/^```markdown\n/, '').replace(/^```\n/, '').replace(/\n```$/, '');
+  const data = await response.json();
+  
+  if (!data.candidates || !data.candidates[0]?.content?.parts[0]?.text) {
+    console.error("❌ ERREUR API Gemini :", JSON.stringify(data));
+    process.exit(1);
+  }
 
-  // Génération du nom de fichier unique
+  let articleContent = data.candidates[0].content.parts[0].text;
+  articleContent = articleContent.replace(/^```markdown\n/, '').replace(/^```\n/, '').replace(/\n```$/, '').trim();
+
   const slug = selectedItem.title
     .toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)+/g, '')
-    .slice(0, 60);
+    .slice(0, 50);
 
   const filename = `${Date.now()}-${slug}.md`;
   const targetDir = path.join(process.cwd(), 'src', 'content');
@@ -125,7 +137,7 @@ Article basé sur les informations publiées par **${selectedItem.creator || sel
   fs.writeFileSync(filePath, articleContent, 'utf-8');
   console.log(`✅ Article créé avec succès : ${filePath}`);
 
-  // Notification IndexNow (Ping instantané)
+  // Ping IndexNow
   try {
     const siteUrl = '[https://pulse-news-three.vercel.app](https://pulse-news-three.vercel.app)';
     const articleUrl = `${siteUrl}/news/${filename.replace('.md', '')}`;
@@ -138,16 +150,19 @@ Article basé sur les informations publiées par **${selectedItem.creator || sel
       urlList: [articleUrl]
     };
 
-    const response = await fetch('[https://api.indexnow.org/indexnow](https://api.indexnow.org/indexnow)', {
+    const pingRes = await fetch('[https://api.indexnow.org/indexnow](https://api.indexnow.org/indexnow)', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(indexNowPayload)
     });
 
-    console.log(`📡 Ping IndexNow exécuté pour ${articleUrl} (Statut: ${response.status})`);
+    console.log(`📡 Ping IndexNow exécuté pour ${articleUrl} (Statut: ${pingRes.status})`);
   } catch (err) {
     console.error("⚠️ Erreur lors du ping IndexNow :", err.message);
   }
 }
 
-run();
+run().catch(err => {
+  console.error("❌ Erreur fatale :", err);
+  process.exit(1);
+});
