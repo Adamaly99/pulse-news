@@ -53,6 +53,27 @@ const { title, description, type = 'website' } = Astro.props;
         align-items: center;
         justify-content: space-between;
       }
+<header style="border-bottom: 1px solid var(--border); background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 50;">
+  <div style="max-width: 1100px; margin: 0 auto; padding: 0.8rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    
+    <!-- Logo -->
+    <a href="/" style="font-size: 1.4rem; font-weight: 800; color: var(--text-bright); text-decoration: none; letter-spacing: -0.5px;">
+      Pulse<span style="color: var(--accent);">News</span>
+    </a>
+
+    <!-- Liens Catégories & À propos -->
+    <nav style="display: flex; gap: 1.2rem; font-size: 0.9rem; font-weight: 500; overflow-x: auto; padding-bottom: 4px;">
+      <a href="/" style="color: #cbd5e1; text-decoration: none;">Accueil</a>
+      <a href="/category/intelligence-artificielle" style="color: #cbd5e1; text-decoration: none;">IA</a>
+      <a href="/category/android" style="color: #cbd5e1; text-decoration: none;">Android</a>
+      <a href="/category/apple" style="color: #cbd5e1; text-decoration: none;">Apple</a>
+      <a href="/category/cybersecurite" style="color: #cbd5e1; text-decoration: none;">Cybersécurité</a>
+      <a href="/a-propos" style="color: var(--accent); text-decoration: none; font-weight: 600;">À Propos</a>
+    </nav>
+
+  </div>
+</header>
+
 
       .logo {
         display: flex;
