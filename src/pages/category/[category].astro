@@ -1,0 +1,71 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const posts = await Astro.glob('../../content/*.md');
+  
+  // Extraction de toutes les catégories uniques
+  const categories = [...new Set(posts.map(p => p.frontmatter.category).filter(Boolean))];
+  
+  return categories.map(category => {
+    const filteredPosts = posts.filter(p => p.frontmatter.category === category);
+    return {
+      params: { category: category.toLowerCase() },
+      props: { categoryName: category, posts: filteredPosts }
+    };
+  });
+}
+
+const { categoryName, posts } = Astro.props;
+
+// Tri du plus récent au plus ancien
+const sortedPosts = posts.sort((a, b) => 
+  new Date(b.frontmatter.pubDate).getTime() - new Date(a.frontmatter.pubDate).getTime()
+);
+---
+
+<BaseLayout title={`Actualités ${categoryName} | PulseNews`} description={`Toutes les actualités et analyses sur ${categoryName} décryptées par la rédaction de PulseNews.`}>
+  <main style="max-width: 1000px; margin: 0 auto; padding: 2rem 1rem;">
+    
+    <header style="margin-bottom: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem;">
+      <span style="font-size: 0.85rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px;">Rubrique</span>
+      <h1 style="font-size: 2.5rem; color: var(--text-bright); margin: 0.5rem 0; text-transform: capitalize;">
+        {categoryName.replace(/-/g, ' ')}
+      </h1>
+      <p style="color: #9ca3af; font-size: 1.1rem; margin: 0;">
+        Retrouvez les derniers articles, synthèses et analyses de notre rédaction.
+      </p>
+    </header>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+      {sortedPosts.map(post => {
+        const slug = post.file.split('/').pop().replace('.md', '');
+        return (
+          <article style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--accent); font-weight: 700; text-transform: uppercase;">
+                {post.frontmatter.category}
+              </span>
+              <h2 style="font-size: 1.25rem; margin: 0.5rem 0 0.8rem 0; line-height: 1.4;">
+                <a href={`/news/${slug}`} style="color: var(--text-bright); text-decoration: none;">
+                  {post.frontmatter.title}
+                </a>
+              </h2>
+              <p style="font-size: 0.9rem; color: #9ca3af; line-height: 1.6; margin-bottom: 1rem;">
+                {post.frontmatter.description}
+              </p>
+            </div>
+            <div style="font-size: 0.8rem; color: #6b7280; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem;">
+              <time datetime={post.frontmatter.pubDate}>
+                {new Date(post.frontmatter.pubDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+              </time>
+              <a href={`/news/${slug}`} style="color: var(--accent); text-decoration: none; font-weight: 600;">Lire &rarr;</a>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+
+  </main>
+</BaseLayout>
+
