@@ -15,6 +15,15 @@ const CATEGORIES = [
   'open-source', 'startups', 'smartphones'
 ];
 
+// Images Unsplash de haute qualité par thématique avec paramètres de compression
+const THUMBNAILS = {
+  'intelligence-artificielle': 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=1200&auto=format&fit=crop&q=80',
+  'android': 'https://images.unsplash.com/photo-1607252650355-f7fd0460ccdb?w=1200&auto=format&fit=crop&q=80',
+  'apple': 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=1200&auto=format&fit=crop&q=80',
+  'cybersecurite': 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&auto=format&fit=crop&q=80',
+  'default': 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop&q=80'
+};
+
 async function run() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -38,34 +47,34 @@ async function run() {
   }
 
   if (!selectedItem) {
-    console.log("ℹ️ Aucun article trouvé dans les flux RSS.");
+    console.log("ℹ️ Aucun article trouvé.");
     return;
   }
 
   console.log(`📰 Sujet sélectionné : ${selectedItem.title}`);
 
   const prompt = `
-Tu es le rédacteur en chef senior du média technologique francophone "PulseNews".
-Rédige un article complet, analytique, neutre et hautement informatif à partir de cette actualité :
+Tu es le rédacteur en chef senior du média technologique "PulseNews".
+Rédige une analyse journalistique approfondie (600 à 800 mots) basée sur l'actualité :
 Titre : "${selectedItem.title}"
 Lien d'origine : "${selectedItem.link}"
-Source d'origine : "${selectedItem.creator || selectedItem.source || 'Presse Tech'}"
+Source d'origine : "${selectedItem.creator || selectedItem.source || 'Presse Spécialisée'}"
 
-CONSIGNES STRICTES DE RÉDACTION ET STRUCTURE :
-1. Rédige l'article directement au format Markdown avec le Frontmatter YAML en haut.
+CONSIGNES STRICTES DE FORMATAGE (EEAT / GEO / SEO) :
+1. Formatage direct en Markdown avec le bloc Frontmatter YAML exact ci-dessous.
 2. La catégorie doit être EXACTEMENT l'une des suivantes : [${CATEGORIES.join(', ')}].
-3. Rédige un contenu riche d'environ 500 à 700 mots.
+3. Inclus OBLIGATOIREMENT un tableau comparatif Markdown dans l'analyse.
 
-FORMAT OBLIGATOIRE DU FICHIER :
-
+FORMAT EN-TÊTE YAML :
 ---
-title: "Titre percutant et informatif en français (max 70 chars)"
-description: "Résumé accrocheur pour les moteurs de recherche et réseaux (140-160 chars)"
-pubDate: "${new Date().toISOString().split('T')[0]}"
+title: "Titre journalistique percutant en français (max 70 chars)"
+description: "Méta-description analytique pour SEO (140-160 chars)"
+pubDate: "${new Date().toISOString()}"
 category: "choisir_une_categorie_de_la_liste"
-author: "Rédaction PulseNews"
-sourceName: "${selectedItem.creator || selectedItem.source || 'Presse Tech'}"
+author: "Alexandre Dupont"
+sourceName: "${selectedItem.creator || selectedItem.source || 'Presse Spécialisée'}"
 sourceUrl: "${selectedItem.link}"
+image: "REMPLACER_PAR_CATEGORY_IMAGE"
 keyTakeaways:
   - "Point clé 1"
   - "Point clé 2"
@@ -79,26 +88,32 @@ faq:
     answer: "Réponse claire et précise."
 ---
 
-## Introduction & Contexte
-(Présentation claire des faits récents, du contexte et des acteurs impliqués)
+## Contexte Historique & Enjeux
+(Présentation détaillée des événements récents, des acteurs concernés et du contexte de l'industrie)
 
 ## À retenir
-(Synthèse en quelques phrases)
+(Synthèse en quelques phrases des faits confirmés)
 
-## Notre Analyse
-(Analyse approfondie : Pourquoi cette information est importante ? Ce qui est confirmé vs incertitudes ? Impact sur l'industrie et les utilisateurs ?)
+## Notre Analyse Éditoriale
+(Analyse neutre et approfondie : opportunités, limites techniques et incertitudes)
 
-## Avantages, Limites et Risques
-(Détail des points forts, des faiblesses ou des risques liés à cette nouveauté)
+## Tableau Comparatif & Impact
+(Fournir un tableau Markdown comparant la situation avant/après ou avec les solutions concurrentes)
 
-## Ce que cela change pour les utilisateurs
-(Conséquences pratiques et concrètes au quotidien)
+| Critère | Situation Antérieure / Concurrence | Nouvelle Annonce / Évolution |
+| :--- | :--- | :--- |
+| **Impact utilisateur** | ... | ... |
+| **Performance / Sécurité** | ... | ... |
+| **Adoption Industrie** | ... | ... |
 
-## Définitions & Glossaire
-(Explication simple des 2-3 termes techniques clés mentionnés dans l'article)
+## Conséquences Concrètes pour les Utilisateurs
+(Explication claire et pragmatique de ce qui change au quotidien)
+
+## Définitions & Termes Techniques
+(Explication pédagogique de 2 à 3 termes complexes cités)
 
 ## Sources et Références
-Article basé sur les informations publiées par **${selectedItem.creator || selectedItem.source || 'Presse Tech'}**.
+Article rédigé sur la base des annonces transmises par **${selectedItem.creator || selectedItem.source || 'Presse Spécialisée'}**.
 `;
 
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
@@ -118,6 +133,13 @@ Article basé sur les informations publiées par **${selectedItem.creator || sel
 
   let articleContent = data.candidates[0].content.parts[0].text;
   articleContent = articleContent.replace(/^```markdown\n/, '').replace(/^```\n/, '').replace(/\n```$/, '').trim();
+
+  // Détection de la catégorie pour associer l'image d'illustration
+  const catMatch = articleContent.match(/category:\s*"([^"]+)"/);
+  const detectedCategory = catMatch ? catMatch[1] : 'default';
+  const imageUrl = THUMBNAILS[detectedCategory] || THUMBNAILS['default'];
+
+  articleContent = articleContent.replace('REMPLACER_PAR_CATEGORY_IMAGE', imageUrl);
 
   const slug = selectedItem.title
     .toLowerCase()
