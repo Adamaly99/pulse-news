@@ -1,0 +1,38 @@
+name: Auto News Publisher
+
+on:
+  schedule:
+    # S'exécute chaque jour à 06h00 UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Permet de lancer le script manuellement depuis GitHub quand tu veux
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: Configuration de Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installation des dépendances du script
+        run: npm install rss-parser
+
+      - name: Exécution du générateur d'articles
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node scripts/auto-publisher.mjs
+
+      - name: Commit et Push de l'article généré
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add src/content/
+          git diff --staged --quiet || (git commit -m "auto: publication quotidienne d'article [skip ci]" && git push)
+
