@@ -1,0 +1,43 @@
+---
+const { currentSlug, category } = Astro.props;
+
+const allPosts = await Astro.glob('../content/*.md');
+
+// Filtrer pour exclure l'article courant et privilégier la même catégorie
+const related = allPosts
+  .filter(post => {
+    const slug = post.file.split('/').pop().replace('.md', '');
+    return slug !== currentSlug && post.frontmatter.category === category;
+  })
+  .slice(0, 3);
+---
+
+{related.length > 0 && (
+  <section style="margin-top: 3.5rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+    <h3 style="color: var(--text-bright); font-size: 1.3rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+      🔗 Dans la même rubrique
+    </h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
+      {related.map(post => {
+        const slug = post.file.split('/').pop().replace('.md', '');
+        return (
+          <a href={`/news/${slug}`} style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-decoration: none; transition: border-color 0.2s;" class="related-card">
+            <h4 style="color: var(--text-bright); font-size: 0.95rem; margin: 0 0 0.5rem 0; line-height: 1.4;">
+              {post.frontmatter.title}
+            </h4>
+            <span style="font-size: 0.8rem; color: #6b7280;">
+              {new Date(post.frontmatter.pubDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+            </span>
+          </a>
+        );
+      })}
+    </div>
+  </section>
+)}
+
+<style>
+  .related-card:hover {
+    border-color: var(--accent) !important;
+  }
+</style>
+
