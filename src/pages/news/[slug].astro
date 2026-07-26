@@ -127,14 +127,10 @@ const breadcrumbSchema = {
     {post.frontmatter.image && (
       <div style="margin-bottom: 2rem; border-radius: 12px; overflow: hidden; border: 1px solid var(--border);">
         <img 
-          src={post.frontmatter.image} 
-          alt={title} 
-          width="1200"
-          height="630"
-          loading="eager"
-          decoding="async"
-          style="width: 100%; height: auto; max-height: 420px; object-fit: cover; display: block;" 
-       onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop';" />
+  src={post.data.image} 
+  alt={post.data.title} 
+  onerror={`this.onerror=null;this.src='${defaultImage}';`}
+/>
       </div>
     )}
 
