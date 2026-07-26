@@ -1,24 +1,9 @@
 ---
-const fallbackImages = [
-  "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&auto=format&fit=crop"
-];
-
-// Choisit automatiquement une image différente selon le titre de l'article
-const defaultImage = fallbackImages[(post.data.title || '').length % fallbackImages.length];
-import ReaderExperience from '../../components/ReaderExperience.astro';
-
-import RelatedArticles from '../../components/RelatedArticles.astro';
-
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 export async function getStaticPaths() {
   const posts = await Astro.glob('../../content/*.md');
-  return posts.map((post) => {
+  return posts.map(post => {
     const slug = post.file.split('/').pop().replace('.md', '');
     return {
       params: { slug },
@@ -28,192 +13,41 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { Content } = post;
-const { 
-  title = '', 
-  description = '', 
-  pubDate = new Date().toISOString(), 
-  category = 'Technologie', 
-  author = 'Rédaction PulseNews',
-  sourceName = 'Presse Spécialisée',
-  sourceUrl = '#',
-  keyTakeaways = [],
-  faq = []
-} = post.frontmatter;
+const { title, description, pubDate, category = 'Actualités' } = post.frontmatter;
 
-const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric'
-});
+const fallbackImages = [
+  "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&auto=format&fit=crop"
+];
 
-const slug = post.file.split('/').pop().replace('.md', '');
-const currentUrl = `https://pulse-news-three.vercel.app/news/${slug}`;
-
-// Schema.org NewsArticle
-const newsArticleSchema = {
-  "@context": "https://schema.org",
-  "@type": "NewsArticle",
-  "headline": title,
-  "description": description,
-  "datePublished": pubDate,
-  "dateModified": pubDate,
-  "mainEntityOfPage": currentUrl,
-  "author": {
-    "@type": "Organization",
-    "name": author,
-    "url": "https://pulse-news-three.vercel.app/a-propos"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "PulseNews",
-    "url": "https://pulse-news-three.vercel.app"
-  }
-};
-
-// Schema.org FAQPage
-const faqSchema = faq && faq.length > 0 ? {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": faq.map((item) => ({
-    "@type": "Question",
-    "name": item.question,
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": item.answer
-    }
-  }))
-} : null;
-
-// Schema.org Breadcrumb
-const breadcrumbSchema = {
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://pulse-news-three.vercel.app" },
-    { "@type": "ListItem", "position": 2, "name": category, "item": "https://pulse-news-three.vercel.app" },
-    { "@type": "ListItem", "position": 3, "name": title, "item": currentUrl }
-  ]
-};
+const fallbackIndex = (title || '').length % fallbackImages.length;
+const displayImage = fallbackImages[fallbackIndex];
+const Content = post.Content;
 ---
 
-<BaseLayout title={`${title} | PulseNews`} description={description}>
-  <script type="application/ld+json" set:html={JSON.stringify(newsArticleSchema)} />
-  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
-  {faqSchema && <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />}
-
-  <article style="max-width: 820px; margin: 0 auto; padding: 2rem 1rem; line-height: 1.8;">
+<BaseLayout title={title} description={description}>
+  <article style="max-width: 800px; margin: 0 auto; padding: 2rem 1rem;">
     
-    <nav style="font-size: 0.85rem; color: #9ca3af; margin-bottom: 1.5rem;">
-      <a href="/" style="color: #9ca3af; text-decoration: none;">Accueil</a> &rsaquo; 
-      <span style="text-transform: capitalize; color: var(--accent); font-weight: 600;">{category}</span>
-    </nav>
+    <div style="margin-bottom: 2rem;">
+      <span style="color: var(--accent); font-weight: 700; text-transform: uppercase;">{category}</span>
+      <h1 style="font-size: 2.5rem; font-weight: 800; margin: 0.5rem 0;">{title}</h1>
+    </div>
 
-    <header style="margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem;">
-      <span style="background: rgba(225, 29, 72, 0.15); color: var(--accent); border: 1px solid var(--accent); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">
-        {category}
-      </span>
-      <h1 style="font-size: 2.3rem; color: var(--text-bright); margin: 1rem 0 0.5rem 0; line-height: 1.25;">{title}</h1>
-      <p style="font-size: 1.15rem; color: #9ca3af; margin-bottom: 1rem;">{description}</p>
-      
-      <div style="display: flex; gap: 1rem; font-size: 0.85rem; color: #6b7280; flex-wrap: wrap; align-items: center;">
-        <span>Par <strong style="color: var(--text-bright);">{author}</strong></span>
-        <span>•</span>
-        <time datetime={pubDate}>{formattedDate}</time>
-        <span>•</span>
-        <span style="background: rgba(16,185,129,0.1); color: #10b981; padding: 2px 8px; border-radius: 4px;">Analyse Vérifiée EEAT</span>
-      </div>
-    </header>
-    {post.frontmatter.image && (
-      <div style="margin-bottom: 2rem; border-radius: 12px; overflow: hidden; border: 1px solid var(--border);">
-        <img 
-  src={post.data.image} 
-  alt={post.data.title} 
-  onerror={`this.onerror=null;this.src='${defaultImage}';`}
-/>
-      </div>
-    )}
+    <div style="margin-bottom: 2rem; overflow: hidden; border-radius: 12px; max-height: 450px;">
+      <img 
+        src={displayImage} 
+        alt={title || 'Image d\'article'} 
+        style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px; display: block;"
+      />
+    </div>
 
-    <!-- Module d'expérience de lecture -->
-    <ReaderExperience contentText={post.rawContent ? post.rawContent() : ''} />
-
-
-    {keyTakeaways && keyTakeaways.length > 0 && (
-      <div style="background: var(--card-bg); border-left: 4px solid var(--accent); border: 1px solid var(--border); border-left-width: 4px; padding: 1.25rem 1.5rem; border-radius: 8px; margin-bottom: 2.5rem;">
-        <h3 style="margin-top: 0; color: var(--accent); font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
-          📌 À retenir (Synthèse)
-        </h3>
-        <ul style="margin: 0; padding-left: 1.2rem; color: #e2e8f0; font-size: 0.95rem;">
-          {keyTakeaways.map((item) => (
-            <li style="margin-bottom: 0.4rem;">{item}</li>
-          ))}
-        </ul>
-      </div>
-    )}
-
-    <div class="article-content" style="font-size: 1.05rem; color: #cbd5e1;">
+    <div class="prose">
       <Content />
     </div>
 
-    {faq && faq.length > 0 && (
-      <section style="margin-top: 3rem; background: var(--card-bg); border: 1px solid var(--border); padding: 1.5rem; border-radius: 12px;">
-        <h2 style="color: var(--text-bright); font-size: 1.4rem; margin-top: 0;">Foire Aux Questions (FAQ)</h2>
-        {faq.map((item) => (
-          <div style="margin-bottom: 1rem;">
-            <h4 style="color: var(--accent); margin-bottom: 0.3rem;">❓ {item.question}</h4>
-            <p style="margin: 0; font-size: 0.95rem; color: #9ca3af;">{item.answer}</p>
-          </div>
-        ))}
-      </section>
-    )}
-
-    <footer style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); font-size: 0.9rem; color: #6b7280;">
-      <p style="margin-bottom: 0.5rem;">
-        <strong>Transparence & Sources :</strong> Cet article a été rédigé avec l'assistance d'outils d'IA sous supervision éditoriale humaine. Source principale : <a href={sourceUrl} target="_blank" rel="noopener noreferrer" style="color: var(--accent);">{sourceName}</a>.
-      </p>
-      <p style="margin: 0;">
-        Consultez notre <a href="/a-propos" style="color: #9ca3af;">Charte Éditoriale et Politique IA</a>.
-      </p>
-    <!-- Maillage Interne (Articles Similaires) -->
-    <RelatedArticles currentSlug={slug} category={category} />
-
-    </footer>
-
   </article>
-
-  <style is:global>
-    .article-content {
-      font-size: 1.125rem;
-      line-height: 1.8;
-      color: #d1d5db;
-    }
-    .article-content h2 {
-      font-size: 1.75rem;
-      color: var(--text-bright);
-      margin: 2.5rem 0 1rem 0;
-      border-left: 3px solid var(--accent);
-      padding-left: 0.75rem;
-    }
-    .article-content h3 {
-      font-size: 1.35rem;
-      color: var(--text-bright);
-      margin: 2rem 0 0.75rem 0;
-    }
-    .article-content p {
-      margin-bottom: 1.5rem;
-    }
-    .article-content ul, .article-content ol {
-      margin: 0 0 1.5rem 1.5rem;
-    }
-    .article-content li {
-      margin-bottom: 0.5rem;
-    }
-    .article-content blockquote {
-      border-left: 4px solid var(--border);
-      padding-left: 1rem;
-      margin: 1.5rem 0;
-      font-style: italic;
-      color: #9ca3af;
-    }
-  </style>
 </BaseLayout>
