@@ -1,4 +1,15 @@
 ---
+const fallbackImages = [
+  "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&auto=format&fit=crop"
+];
+
+// Choisit automatiquement une image différente selon le titre de l'article
+const defaultImage = fallbackImages[(post.data.title || '').length % fallbackImages.length];
 import ReaderExperience from '../../components/ReaderExperience.astro';
 
 import RelatedArticles from '../../components/RelatedArticles.astro';
