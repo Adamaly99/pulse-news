@@ -12,13 +12,16 @@ const fallbackImages = [
 
 const posts = await Astro.glob('../content/*.md');
 posts.sort((a, b) => new Date(b.frontmatter.pubDate).valueOf() - new Date(a.frontmatter.pubDate).valueOf());
+
+// Récupération automatique des catégories uniques
+const allCategories = ['Toutes', ...new Set(posts.map(p => p.frontmatter.category || 'Actualités'))];
 ---
 
 <BaseLayout 
   title="PulseNews | L'actualité en temps réel & Analyses" 
   description="Plateforme d'information haute performance, conçue pour une vitesse maximale et optimisée pour les moteurs de recherche Google et l'IA."
 >
-  <section style="padding: 2rem 0 3rem 0; border-bottom: 1px solid var(--border); margin-bottom: 3rem;">
+  <section style="padding: 2rem 0 3rem 0; border-bottom: 1px solid var(--border); margin-bottom: 2rem;">
     <div style="display: inline-block; padding: 0.35rem 1rem; background: rgba(225, 29, 72, 0.15); border: 1px solid var(--accent); border-radius: 50px; color: var(--accent); font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem;">
       • Fil d'Actualité en Temps Réel
     </div>
@@ -30,6 +33,24 @@ posts.sort((a, b) => new Date(b.frontmatter.pubDate).valueOf() - new Date(a.fron
     </p>
   </section>
 
+  <!-- Filtres de catégories -->
+  <section style="margin-bottom: 2.5rem;">
+    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;" id="category-filters">
+      {allCategories.map((cat, idx) => (
+        <button 
+          class="filter-btn"
+          data-category={cat}
+          style={idx === 0 
+            ? "padding: 0.5rem 1.1rem; border-radius: 20px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" 
+            : "padding: 0.5rem 1.1rem; border-radius: 20px; border: 1px solid var(--border); background: var(--card-bg); color: #d1d5db; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"}
+        >
+          {cat}
+        </button>
+      ))}
+    </div>
+  </section>
+
+  <!-- Liste des articles -->
   <section>
     <div style="display: grid; gap: 2rem;">
       {posts.map((post) => {
@@ -41,13 +62,15 @@ posts.sort((a, b) => new Date(b.frontmatter.pubDate).valueOf() - new Date(a.fron
           day: 'numeric'
         });
 
-        // Attribution d'une image HD Unsplash valide basée sur le titre
         const fallbackIndex = (title || '').length % fallbackImages.length;
         const displayImage = fallbackImages[fallbackIndex];
 
         return (
-          <article style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; transition: transform 0.2s;">
-            
+          <article 
+            class="post-card" 
+            data-category={category} 
+            style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; transition: transform 0.2s;"
+          >
             <div style="margin-bottom: 1.25rem; overflow: hidden; border-radius: 8px; max-height: 240px;">
               <img 
                 src={displayImage} 
@@ -81,4 +104,37 @@ posts.sort((a, b) => new Date(b.frontmatter.pubDate).valueOf() - new Date(a.fron
       })}
     </div>
   </section>
+
+  <!-- Script interactif de filtrage client -->
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', () => {
+      const buttons = document.querySelectorAll('.filter-btn');
+      const articles = document.querySelectorAll('.post-card');
+
+      buttons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const selected = btn.getAttribute('data-category');
+
+          buttons.forEach((b) => {
+            b.style.background = 'var(--card-bg)';
+            b.style.borderColor = 'var(--border)';
+            b.style.color = '#d1d5db';
+          });
+
+          btn.style.background = 'var(--accent)';
+          btn.style.borderColor = 'var(--accent)';
+          btn.style.color = '#fff';
+
+          articles.forEach((article) => {
+            const cat = article.getAttribute('data-category');
+            if (selected === 'Toutes' || cat === selected) {
+              article.style.display = 'block';
+            } else {
+              article.style.display = 'none';
+            }
+          });
+        });
+      });
+    });
+  </script>
 </BaseLayout>
