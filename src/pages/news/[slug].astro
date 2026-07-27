@@ -1,24 +1,32 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import ReaderExperience from '../../components/ReaderExperience.astro';
-import RelatedArticles from '../../components/RelatedArticles.astro';
 
 export async function getStaticPaths() {
-  const newsEntries = await getCollection('news');
-  return newsEntries.map(entry => ({
-    params: { slug: entry.slug },
-    props: { entry },
-  }));
+  const posts = await Astro.glob('../../content/**/*.md');
+  return posts.map((post) => {
+    const slug = post.file.split('/').pop().replace('.md', '');
+    return {
+      params: { slug },
+      props: { post },
+    };
+  });
 }
 
-const { entry } = Astro.props;
-const { Content } = await entry.render();
+const { post } = Astro.props;
+const { Content } = await post.render();
 
-const { title, description, pubDate, category, keyTakeaways, faq, sourceUrl, sourceName } = entry.data;
+const {
+  title = 'Article',
+  description = '',
+  pubDate,
+  category = 'technologie',
+  keyTakeaways = [],
+  faq = [],
+  sourceUrl,
+  sourceName
+} = post.frontmatter || {};
 
-// Formatage de date
-const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
+const formattedDate = new Date(pubDate || Date.now()).toLocaleDateString('fr-FR', {
   year: 'numeric',
   month: 'long',
   day: 'numeric'
@@ -39,8 +47,6 @@ const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
         )}
       </div>
     </header>
-
-    <ReaderExperience />
 
     {keyTakeaways && keyTakeaways.length > 0 && (
       <section class="takeaways-box">
@@ -70,13 +76,8 @@ const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
         </div>
       </section>
     )}
-
-    <footer class="article-footer">
-      <RelatedArticles currentCategory={category} currentSlug={entry.slug} />
-    </footer>
   </article>
 
-  <!-- Schema.org FAQ Page -->
   {faq && faq.length > 0 && (
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
@@ -101,7 +102,7 @@ const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
 
   .category-badge {
     display: inline-block;
-    background: var(--accent-color);
+    background: var(--accent-color, #38bdf8);
     color: #0f172a;
     font-weight: 700;
     font-size: 0.75rem;
@@ -118,19 +119,19 @@ const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
   }
 
   .meta {
-    color: var(--text-muted);
+    color: #94a3b8;
     font-size: 0.875rem;
     margin-bottom: 2rem;
   }
 
   .meta a {
-    color: var(--accent-color);
+    color: var(--accent-color, #38bdf8);
     text-decoration: underline;
   }
 
   .takeaways-box {
     background: #1e293b;
-    border-left: 4px solid var(--accent-color);
+    border-left: 4px solid var(--accent-color, #38bdf8);
     padding: 1.5rem;
     border-radius: 0.5rem;
     margin-bottom: 2rem;
@@ -176,7 +177,8 @@ const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
 
   .faq-item h3 {
     font-size: 1.1rem;
-    color: var(--accent-color);
+    color: var(--accent-color, #38bdf8);
     margin-bottom: 0.5rem;
   }
 </style>
+
