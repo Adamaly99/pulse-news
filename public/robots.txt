@@ -1,14 +1,4 @@
 User-agent: *
 Allow: /
 
-# Autorisation des crawlers IA pour le référencement GEO
-User-agent: GPTBot
-Allow: /
-
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: PerplexityBot
-Allow: /
-
-Sitemap: https://pulse-news.vercel.app/sitemap-index.xml
+Sitemap: https://pulse-news-three.vercel.app/sitemap.xml
