@@ -7,7 +7,7 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro",
+   
     "auto-news": "node scripts/auto-publisher.mjs"
   },
   "dependencies": {
