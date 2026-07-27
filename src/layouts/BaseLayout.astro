@@ -1,33 +1,55 @@
 ---
 import SEO from '../components/SEO.astro';
 
-export interface Props {
+interface Props {
   title: string;
-  description: string;
-  type?: 'website' | 'article';
+  description?: string;
+  image?: string;
+  article?: boolean;
 }
 
-const { title, description, type = 'website' } = Astro.props;
+const { title, description, image, article = false } = Astro.props;
 ---
 
 <!DOCTYPE html>
 <html lang="fr">
   <head>
-<meta name="google-site-verification" content="62MKy-NkD-iu0-BAMiVzH-Owyd5Zb_U-qbgb2U17FGM" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <SEO title={title} description={description} type={type} />
+    <SEO title={title} description={description} image={image} article={article} />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-container">
+        <a href="/" class="logo">
+          Pulse<span>News</span>
+        </a>
+        <nav class="main-nav">
+          <a href="/">Accueil</a>
+          <a href="/category/intelligence-artificielle">IA</a>
+          <a href="/category/cybersecurite">Cybersécurité</a>
+          <a href="/category/technologie">Technologie</a>
+          <a href="/a-propos">À Propos</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <p>&copy; {new Date().getFullYear()} PulseNews. Tous droits réservés.</p>
+    </footer>
+
     <style is:global>
       :root {
-        --bg: #090d16;
-        --card-bg: #111827;
-        --border: #1f2937;
-        --text: #e5e7eb;
-        --text-bright: #ffffff;
-        --accent: #e11d48;
-        --accent-hover: #f43f5e;
-        --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --bg-color: #0f172a;
+        --card-bg: #1e293b;
+        --text-color: #f8fafc;
+        --text-muted: #94a3b8;
+        --accent-color: #38bdf8;
+        --border-color: #334155;
       }
 
       * {
@@ -37,113 +59,71 @@ const { title, description, type = 'website' } = Astro.props;
       }
 
       body {
-        background-color: var(--bg);
-        color: var(--text);
-        font-family: var(--font);
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         line-height: 1.6;
-        padding: 0 1.5rem;
       }
 
-      header {
-        max-width: 1000px;
+      .header-container {
+        max-width: 1100px;
         margin: 0 auto;
-        padding: 1.5rem 0;
-        border-bottom: 1px solid var(--border);
+        padding: 1rem 1.5rem;
         display: flex;
-        align-items: center;
         justify-content: space-between;
+        align-items: center;
       }
-<header style="border-bottom: 1px solid var(--border); background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 50;">
-  <div style="max-width: 1100px; margin: 0 auto; padding: 0.8rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-    
-    <!-- Logo -->
-    <a href="/" style="font-size: 1.4rem; font-weight: 800; color: var(--text-bright); text-decoration: none; letter-spacing: -0.5px;">
-      Pulse<span style="color: var(--accent);">News</span>
-    </a>
 
-    <!-- Liens Catégories & À propos -->
-    <nav style="display: flex; gap: 1.2rem; font-size: 0.9rem; font-weight: 500; overflow-x: auto; padding-bottom: 4px;">
-      <a href="/" style="color: #cbd5e1; text-decoration: none;">Accueil</a>
-      <a href="/category/intelligence-artificielle" style="color: #cbd5e1; text-decoration: none;">IA</a>
-      <a href="/category/android" style="color: #cbd5e1; text-decoration: none;">Android</a>
-      <a href="/category/apple" style="color: #cbd5e1; text-decoration: none;">Apple</a>
-      <a href="/category/cybersecurite" style="color: #cbd5e1; text-decoration: none;">Cybersécurité</a>
-      <a href="/a-propos" style="color: var(--accent); text-decoration: none; font-weight: 600;">À Propos</a>
-    </nav>
-
-  </div>
-</header>
-
+      .site-header {
+        border-bottom: 1px solid var(--border-color);
+        background: rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(8px);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
 
       .logo {
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-        font-weight: 800;
-        font-size: 1.4rem;
-        color: var(--text-bright);
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #fff;
         text-decoration: none;
       }
 
       .logo span {
-        color: var(--accent);
+        color: var(--accent-color);
       }
 
-      main {
-        max-width: 1000px;
-        margin: 3rem auto;
+      .main-nav {
+        display: flex;
+        gap: 1.5rem;
       }
 
-      footer {
-        max-width: 1000px;
-        margin: 5rem auto 2rem auto;
-        padding-top: 2rem;
-        border-top: 1px solid var(--border);
-        text-align: center;
-        font-size: 0.875rem;
-        color: #9ca3af;
-      }
-
-      a {
-        color: var(--accent);
+      .main-nav a {
+        color: var(--text-muted);
         text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
       }
 
-      a:hover {
-        color: var(--accent-hover);
+      .main-nav a:hover {
+        color: var(--accent-color);
+      }
+
+      .main-content {
+        max-width: 1100px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+        min-height: 80vh;
+      }
+
+      .site-footer {
+        border-top: 1px solid var(--border-color);
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-muted);
+        font-size: 0.875rem;
       }
     </style>
-  </head>
-  <body>
-    <header>
-      <a href="/" class="logo">
-        <svg width="28" height="28" viewBox="0 0 100 100">
-          <rect width="100" height="100" rx="22" fill="#e11d48"/>
-          <text x="50" y="68" font-size="58" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900">P</text>
-        </svg>
-        Pulse<span>News</span>
-      </a>
-    </header>
-    <main>
-      <slot />
-<script async type="application/javascript"
-        src="https://news.google.com/swg/js/v1/swg-basic.js"></script>
-<script>
-  (self.SWG_BASIC = self.SWG_BASIC || []).push( basicSubscriptions => {
-    basicSubscriptions.init({
-      type: "NewsArticle",
-      isPartOfType: ["Product"],
-      isPartOfProductId: "CAowx4fMDA:openaccess",
-      clientOptions: { theme: "light", lang: "fr" },
-    });
-  });
-</script>
-    </main>
-   <footer style="margin-top: 5rem; padding: 2rem 0; border-top: 1px solid var(--border); text-align: center; color: #6b7280; font-size: 0.9rem;">
-    <div style="display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
-      <a href="/mentions-legales" style="color: #9ca3af; text-decoration: none;">Mentions Légales</a>
-      <a href="/politique-de-confidentialite" style="color: #9ca3af; text-decoration: none;">Politique de Confidentialité</a>
-      <a href="/contact" style="color: #9ca3af; text-decoration: none;">Contact</a>
-    </div>
-    <p>&copy; 2026 PulseNews. Tous droits réservés.</p>
-  </footer>
+  </body>
+</html>
