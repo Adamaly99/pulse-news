@@ -1,5 +1,4 @@
 import rss from '@astrojs/rss';
-import { getCollection } from 'astro:content';
 
 function xmlEscape(str) {
   if (!str) return '';
@@ -12,17 +11,22 @@ function xmlEscape(str) {
 }
 
 export async function GET(context) {
-  const news = await getCollection('news');
-  
+  const posts = await import.meta.glob('../content/**/*.md', { eager: true });
+  const postList = Object.values(posts);
+
   return rss({
     title: 'PulseNews — L\'actualité Tech & IA',
     description: 'Suivez les dernières innovations tech, IA, et cybersécurité.',
     site: context.site || 'https://pulse-news-three.vercel.app',
-    items: news.map((post) => ({
-      title: xmlEscape(post.data.title),
-      pubDate: post.data.pubDate,
-      description: xmlEscape(post.data.description),
-      link: `/news/${post.slug}/`,
-    })),
+    items: postList.map((post) => {
+      const slug = post.file.split('/').pop().replace('.md', '');
+      const frontmatter = post.frontmatter || {};
+      return {
+        title: xmlEscape(frontmatter.title || 'Article PulseNews'),
+        pubDate: new Date(frontmatter.pubDate || Date.now()),
+        description: xmlEscape(frontmatter.description || ''),
+        link: `/news/${slug}/`,
+      };
+    }),
   });
 }
