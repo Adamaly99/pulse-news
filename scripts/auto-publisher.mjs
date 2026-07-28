@@ -83,12 +83,14 @@ async function run() {
 
   console.log(`📰 Nouvel article trouvé : "${selectedItem.title}"`);
 
-  // Définir les variables à partir de l'élément RSS (item)
-const sourceTitle = item.title || "Titre non disponible";
-const sourceUrl = item.link || "";
-const sourceContent = item.contentSnippet || item.content || item.title;
-const sourceName = item.creator || "Flux RSS";
-const detectedCategory = "technologie"; // ou la catégorie détectée
+ // Récupération sécurisée de l'article (qu'il s'appelle article, item ou entry)
+const currentArticle = typeof article !== 'undefined' ? article : (typeof item !== 'undefined' ? item : entry);
+
+const sourceTitle = currentArticle?.title || "Titre non disponible";
+const sourceUrl = currentArticle?.link || currentArticle?.guid || "";
+const sourceContent = currentArticle?.contentSnippet || currentArticle?.content || sourceTitle;
+const sourceName = currentArticle?.creator || "Flux RSS";
+const detectedCategory = "technologie";
 
 // 1. Date courante au format ISO pour le Frontmatter
 const currentDate = new Date().toISOString();
