@@ -147,6 +147,17 @@ faq:
   let responseText = result.response.text().trim();
   
   // Nettoyage si le modèle entoure de ```json ... ```
+ // Nettoyage des balises Markdown résiduelles éventuelles
+let markdownContent = aiResponseText
+  .replace(/^```markdown/i, '')
+  .replace(/^```/, '')
+  .replace(/```$/, '')
+  .trim();
+
+// Écriture du fichier Markdown dans le dossier src/content/
+const fileName = `${Date.now()}-${slugify(articleTitle)}.md`;
+fs.writeFileSync(`./src/content/${fileName}`, markdownContent);
+
   if (responseText.startsWith('```')) {
     responseText = responseText.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
   }
