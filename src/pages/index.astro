@@ -1,140 +1,62 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-const fallbackImages = [
-  "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&auto=format&fit=crop"
-];
-
 const posts = await Astro.glob('../content/*.md');
-posts.sort((a, b) => new Date(b.frontmatter.pubDate).valueOf() - new Date(a.frontmatter.pubDate).valueOf());
 
-// Récupération automatique des catégories uniques
-const allCategories = ['Toutes', ...new Set(posts.map(p => p.frontmatter.category || 'Actualités'))];
+const sortedPosts = posts.sort((a, b) => {
+  const dateA = new Date(a.frontmatter.pubDate || 0).getTime();
+  const dateB = new Date(b.frontmatter.pubDate || 0).getTime();
+  return dateB - dateA;
+});
+
+const featuredPost = sortedPosts[0];
+const otherPosts = sortedPosts.slice(1);
 ---
 
-<BaseLayout 
-  title="PulseNews | L'actualité en temps réel & Analyses" 
-  description="Plateforme d'information haute performance, conçue pour une vitesse maximale et optimisée pour les moteurs de recherche Google et l'IA."
->
-  <section style="padding: 2rem 0 3rem 0; border-bottom: 1px solid var(--border); margin-bottom: 2rem;">
-    <div style="display: inline-block; padding: 0.35rem 1rem; background: rgba(225, 29, 72, 0.15); border: 1px solid var(--accent); border-radius: 50px; color: var(--accent); font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem;">
-      • Fil d'Actualité en Temps Réel
-    </div>
-    <h1 style="font-size: 2.8rem; font-weight: 800; color: var(--text-bright); line-height: 1.2; margin-bottom: 0.75rem;">
-      À la Une sur PulseNews
-    </h1>
-    <p style="font-size: 1.15rem; color: #9ca3af; max-width: 650px;">
-      Informed, fast, and structured for modern search engines and AI agents.
-    </p>
-  </section>
+<BaseLayout title="PulseNews — L'actualité Tech & IA" description="Suivez les dernières innovations tech, IA, et cybersécurité.">
+  <main class="container">
+    <header class="hero">
+      <h1>Dernières Actualités Tech & IA</h1>
+      <p>Analyses, tendances et décryptage de l'écosystème numérique.</p>
+    </header>
 
-  <!-- Filtres de catégories -->
-  <section style="margin-bottom: 2.5rem;">
-    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;" id="category-filters">
-      {allCategories.map((cat, idx) => (
-        <button 
-          class="filter-btn"
-          data-category={cat}
-          style={idx === 0 
-            ? "padding: 0.5rem 1.1rem; border-radius: 20px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" 
-            : "padding: 0.5rem 1.1rem; border-radius: 20px; border: 1px solid var(--border); background: var(--card-bg); color: #d1d5db; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"}
-        >
-          {cat}
-        </button>
-      ))}
-    </div>
-  </section>
+    {featuredPost && (
+      <section class="featured-card">
+        <span class="badge">{featuredPost.frontmatter.category || 'Tech'}</span>
+        <h2>
+          <a href={`/news/${featuredPost.file.split('/').pop().replace('.md', '')}/`}>
+            {featuredPost.frontmatter.title}
+          </a>
+        </h2>
+        <p>{featuredPost.frontmatter.description}</p>
+      </section>
+    )}
 
-  <!-- Liste des articles -->
-  <section>
-    <div style="display: grid; gap: 2rem;">
-      {posts.map((post) => {
+    <section class="articles-grid">
+      {otherPosts.map((post) => {
         const slug = post.file.split('/').pop().replace('.md', '');
-        const { title, description, pubDate, category = 'Actualités' } = post.frontmatter;
-        const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        });
-
-        const fallbackIndex = (title || '').length % fallbackImages.length;
-        const displayImage = fallbackImages[fallbackIndex];
-
         return (
-          <article 
-            class="post-card" 
-            data-category={category} 
-            style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; transition: transform 0.2s;"
-          >
-            <div style="margin-bottom: 1.25rem; overflow: hidden; border-radius: 8px; max-height: 240px;">
-              <img 
-                src={displayImage} 
-                alt={title || 'Image d\'article'} 
-                style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: block;"
-              />
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-              <span style="color: var(--accent); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">
-                {category}
-              </span>
-              <time style="font-size: 0.85rem; color: #6b7280;">{formattedDate}</time>
-            </div>
-
-            <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem;">
-              <a href={`/news/${slug}`} style="color: inherit; text-decoration: none;">
-                {title}
-              </a>
-            </h2>
-
-            <p style="color: #9ca3af; font-size: 1rem; line-height: 1.6; margin-bottom: 1.25rem;">
-              {description}
-            </p>
-
-            <a href={`/news/${slug}`} style="color: var(--accent); font-weight: 600; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 0.4rem;">
-              Lire l'article complet &rarr;
-            </a>
+          <article class="card">
+            <span class="badge">{post.frontmatter.category || 'Tech'}</span>
+            <h3>
+              <a href={`/news/${slug}/`}>{post.frontmatter.title}</a>
+            </h3>
+            <p>{post.frontmatter.description}</p>
           </article>
         );
       })}
-    </div>
-  </section>
-
-  <!-- Script interactif de filtrage client -->
-  <script is:inline>
-    document.addEventListener('DOMContentLoaded', () => {
-      const buttons = document.querySelectorAll('.filter-btn');
-      const articles = document.querySelectorAll('.post-card');
-
-      buttons.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const selected = btn.getAttribute('data-category');
-
-          buttons.forEach((b) => {
-            b.style.background = 'var(--card-bg)';
-            b.style.borderColor = 'var(--border)';
-            b.style.color = '#d1d5db';
-          });
-
-          btn.style.background = 'var(--accent)';
-          btn.style.borderColor = 'var(--accent)';
-          btn.style.color = '#fff';
-
-          articles.forEach((article) => {
-            const cat = article.getAttribute('data-category');
-            if (selected === 'Toutes' || cat === selected) {
-              article.style.display = 'block';
-            } else {
-              article.style.display = 'none';
-            }
-          });
-        });
-      });
-    });
-  </script>
+    </section>
+  </main>
 </BaseLayout>
+
+<style>
+  .container { max-width: 1000px; margin: 0 auto; padding: 2rem 1rem; }
+  .hero { text-align: center; margin-bottom: 3rem; }
+  .hero h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .featured-card { background: #1e293b; padding: 2rem; border-radius: 0.75rem; margin-bottom: 3rem; border-left: 4px solid #38bdf8; }
+  .featured-card h2 a { color: #f8fafc; font-size: 1.75rem; text-decoration: none; }
+  .articles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+  .card { background: #1e293b; padding: 1.5rem; border-radius: 0.5rem; }
+  .card h3 a { color: #f8fafc; text-decoration: none; }
+  .badge { display: inline-block; background: #38bdf8; color: #0f172a; font-size: 0.75rem; font-weight: bold; padding: 0.2rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; text-transform: uppercase; }
+</style>
