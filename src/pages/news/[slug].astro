@@ -15,18 +15,17 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content } = await post.render();
 
-const {
-  title = 'Article',
-  description = '',
-  pubDate,
-  category = 'technologie',
-  keyTakeaways = [],
-  faq = [],
-  sourceUrl,
-  sourceName
-} = post.frontmatter || {};
+const frontmatter = post.frontmatter || {};
+const title = frontmatter.title || 'Article';
+const description = frontmatter.description || '';
+const pubDate = frontmatter.pubDate || new Date().toISOString();
+const category = frontmatter.category || 'technologie';
+const keyTakeaways = Array.isArray(frontmatter.keyTakeaways) ? frontmatter.keyTakeaways : [];
+const faq = Array.isArray(frontmatter.faq) ? frontmatter.faq : [];
+const sourceUrl = frontmatter.sourceUrl || '';
+const sourceName = frontmatter.sourceName || '';
 
-const formattedDate = new Date(pubDate || Date.now()).toLocaleDateString('fr-FR', {
+const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
   year: 'numeric',
   month: 'long',
   day: 'numeric'
@@ -48,11 +47,11 @@ const formattedDate = new Date(pubDate || Date.now()).toLocaleDateString('fr-FR'
       </div>
     </header>
 
-    {keyTakeaways && keyTakeaways.length > 0 && (
+    {keyTakeaways.length > 0 && (
       <section class="takeaways-box">
         <h2>⚡ En bref</h2>
         <ul>
-          {keyTakeaways.map((point: string) => (
+          {keyTakeaways.map((point) => (
             <li>{point}</li>
           ))}
         </ul>
@@ -63,11 +62,11 @@ const formattedDate = new Date(pubDate || Date.now()).toLocaleDateString('fr-FR'
       <Content />
     </div>
 
-    {faq && faq.length > 0 && (
+    {faq.length > 0 && (
       <section class="faq-section">
         <h2>❓ Foire Aux Questions</h2>
         <div class="faq-list">
-          {faq.map((item: { question: string; answer: string }) => (
+          {faq.map((item) => (
             <div class="faq-item">
               <h3>{item.question}</h3>
               <p>{item.answer}</p>
@@ -78,11 +77,11 @@ const formattedDate = new Date(pubDate || Date.now()).toLocaleDateString('fr-FR'
     )}
   </article>
 
-  {faq && faq.length > 0 && (
+  {faq.length > 0 && (
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "FAQPage",
-      "mainEntity": faq.map((item: { question: string; answer: string }) => ({
+      "mainEntity": faq.map((item) => ({
         "@type": "Question",
         "name": item.question,
         "acceptedAnswer": {
@@ -181,3 +180,4 @@ const formattedDate = new Date(pubDate || Date.now()).toLocaleDateString('fr-FR'
     margin-bottom: 0.5rem;
   }
 </style>
+
