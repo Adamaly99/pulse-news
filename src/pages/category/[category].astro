@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 export async function getStaticPaths() {
-  const posts = await Astro.glob('../../content/*.md');
+  const posts = await Astro.glob('../../content/**/*.md');
   const categories = [...new Set(posts.map((p) => (p.frontmatter.category || 'technologie').toLowerCase()))];
 
   return categories.map((category) => {

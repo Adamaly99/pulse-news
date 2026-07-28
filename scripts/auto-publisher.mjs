@@ -1,33 +1,29 @@
 import fs from 'fs';
 import path from 'path';
 import Parser from 'rss-parser';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const parser = new Parser();
-const CONTENT_DIR = path.join(process.cwd(), 'src', 'content', 'news');
+const CONTENT_DIR = path.join(process.cwd(), 'src', 'content');
 
-// 1. Récupérer toutes les URLs de sources déjà publiées
-function getPublishedSourceUrls() {
-  const publishedUrls = new Set();
-  if (!fs.existsSync(CONTENT_DIR)) {
-    fs.mkdirSync(CONTENT_DIR, { recursive: true });
-    return publishedUrls;
-  }
+const CATEGORIES = [
+  'intelligence-artificielle',
+  'cybersecurite',
+  'android',
+  'apple',
+  'cloud',
+  'startups',
+];
 
-  const files = fs.readdirSync(CONTENT_DIR);
-  for (const file of files) {
-    if (file.endsWith('.md')) {
-      const content = fs.readFileSync(path.join(CONTENT_DIR, file), 'utf-8');
-      const match = content.match(/sourceUrl:\s*["']?([^"'\n]+)["']?/);
-      if (match && match[1]) {
-        publishedUrls.add(match[1].trim());
-      }
-    }
-  }
-  return publishedUrls;
-}
+// Plusieurs requêtes RSS pour couvrir davantage de catégories, pas seulement IA/cybersécurité
+const RSS_FEEDS = [
+  { url: 'https://news.google.com/rss/search?q=intelligence+artificielle&hl=fr&gl=FR&ceid=FR:fr', category: 'intelligence-artificielle' },
+  { url: 'https://news.google.com/rss/search?q=cybersecurite&hl=fr&gl=FR&ceid=FR:fr', category: 'cybersecurite' },
+  { url: 'https://news.google.com/rss/search?q=android+smartphone&hl=fr&gl=FR&ceid=FR:fr', category: 'android' },
+  { url: 'https://news.google.com/rss/search?q=apple+iphone&hl=fr&gl=FR&ceid=FR:fr', category: 'apple' },
+  { url: 'https://news.google.com/rss/search?q=cloud+informatique&hl=fr&gl=FR&ceid=FR:fr', category: 'cloud' },
+  { url: 'https://news.google.com/rss/search?q=startup+technologie+afrique&hl=fr&gl=FR&ceid=FR:fr', category: 'startups' },
+];
 
-// 2. Nettoyer les chaînes pour la génération de slug
 function slugify(text) {
   return text
     .toString()
@@ -37,171 +33,175 @@ function slugify(text) {
     .replace(/[^a-z0-9 -]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
-    .trim();
+    .replace(/(^-|-$)+/g, '')
+    .slice(0, 60);
+}
+
+// Toutes les sourceUrl déjà publiées, pour ne jamais republier la même actu deux fois
+function getPublishedSourceUrls() {
+  const publishedUrls = new Set();
+  if (!fs.existsSync(CONTENT_DIR)) {
+    fs.mkdirSync(CONTENT_DIR, { recursive: true });
+    return publishedUrls;
+  }
+  const files = fs.readdirSync(CONTENT_DIR).filter((f) => f.endsWith('.md'));
+  for (const file of files) {
+    const content = fs.readFileSync(path.join(CONTENT_DIR, file), 'utf-8');
+    const match = content.match(/^sourceUrl:\s*"((?:[^"\\]|\\.)*)"/m);
+    if (match && match[1]) {
+      publishedUrls.add(match[1]);
+    }
+  }
+  return publishedUrls;
+}
+
+// Choisit un article jamais publié, en piochant dans un flux RSS différent à chaque run
+// (ordre mélangé pour éviter de toujours retomber sur la même catégorie)
+async function pickUnpublishedItem(publishedUrls) {
+  const shuffledFeeds = [...RSS_FEEDS].sort(() => Math.random() - 0.5);
+
+  for (const feedConfig of shuffledFeeds) {
+    try {
+      const feed = await parser.parseURL(feedConfig.url);
+      for (const item of feed.items) {
+        if (item.link && !publishedUrls.has(item.link)) {
+          return { item, suggestedCategory: feedConfig.category };
+        }
+      }
+    } catch (e) {
+      console.warn(`⚠️ Flux RSS illisible (${feedConfig.category}) : ${e.message}`);
+    }
+  }
+  return null;
+}
+
+async function callGemini(apiKey, prompt) {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          maxOutputTokens: 8192,
+        },
+      }),
+    }
+  );
+
+  const data = await response.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error(`Réponse Gemini invalide : ${JSON.stringify(data).slice(0, 500)}`);
+  }
+  return JSON.parse(text);
 }
 
 async function run() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    console.error("❌ Erreur : GEMINI_API_KEY non configurée.");
+    console.error('❌ Erreur : GEMINI_API_KEY non configurée.');
     process.exit(1);
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
   const publishedUrls = getPublishedSourceUrls();
-  console.log(`ℹ️ ${publishedUrls.size} URLs de sources déjà répertoriées.`);
+  console.log(`ℹ️ ${publishedUrls.size} URLs de sources déjà publiées, elles seront ignorées.`);
 
-  // RSS Feeds
-  const feedUrls = [
-    'https://news.google.com/rss/search?q=technology&hl=fr&gl=FR&ceid=FR:fr',
-    'https://news.google.com/rss/search?q=intelligence+artificielle&hl=fr&gl=FR&ceid=FR:fr'
-  ];
-
-  let selectedItem = null;
-
-  for (const url of feedUrls) {
-    try {
-      const feed = await parser.parseURL(url);
-      for (const item of feed.items) {
-        if (!publishedUrls.has(item.link)) {
-          selectedItem = item;
-          break;
-        }
-      }
-    } catch (e) {
-      console.warn(`⚠️ Impossible de lire le flux : ${url}`);
-    }
-    if (selectedItem) break;
-  }
-
-  if (!selectedItem) {
-    console.log("✅ Aucun nouvel article détecté dans les flux RSS. Arrêt propre.");
+  const picked = await pickUnpublishedItem(publishedUrls);
+  if (!picked) {
+    console.log('✅ Aucun nouvel article inédit trouvé dans les flux RSS. Arrêt propre, rien à publier.');
     return;
   }
 
-  console.log(`📰 Nouvel article trouvé : "${selectedItem.title}"`);
+  const { item: selectedItem, suggestedCategory } = picked;
+  console.log(`📰 Nouvel article retenu (catégorie suggérée : ${suggestedCategory}) : "${selectedItem.title}"`);
 
- // Récupération sécurisée de l'article (qu'il s'appelle article, item ou entry)
-const currentArticle = typeof article !== 'undefined' ? article : (typeof item !== 'undefined' ? item : entry);
+  const sourceTitle = selectedItem.title || 'Titre non disponible';
+  const sourceContent = selectedItem.contentSnippet || selectedItem.content || sourceTitle;
+  const sourceName = selectedItem.creator || 'Google News';
 
-const sourceTitle = currentArticle?.title || "Titre non disponible";
-const sourceUrl = currentArticle?.link || currentArticle?.guid || "";
-const sourceContent = currentArticle?.contentSnippet || currentArticle?.content || sourceTitle;
-const sourceName = currentArticle?.creator || "Flux RSS";
-const detectedCategory = "technologie";
+  const prompt = `Tu es le rédacteur en chef technique de PulseNews, un média francophone spécialisé Tech, IA et cybersécurité.
 
-// 1. Date courante au format ISO pour le Frontmatter
-const currentDate = new Date().toISOString();
+Rédige une analyse journalistique approfondie (600 à 800 mots) à partir de la source ci-dessous. N'écris JAMAIS une simple paraphrase : apporte du contexte, une mise en perspective marché, et des conséquences concrètes pour les lecteurs.
 
-// 2. Le Prompt Système (Règles d'écriture)
-const SYSTEM_PROMPT = `Tu es le Rédacteur en Chef Technique de PulseNews, un média spécialisé dans l'actualité Tech, l'IA et le développement.
+Titre source : ${sourceTitle}
+Source : ${sourceName}
+Extrait : ${sourceContent}
 
-TA MISSION :
-Rédiger un article d'analyse complet en Markdown à partir de la source fournie. Tu ne dois JAMAIS te contenter de paraphraser la source. Tu dois apporter de la valeur ajoutée en synthétisant, en remettant dans son contexte historique/marché et en expliquant l'impact concret.
+Réponds UNIQUEMENT avec un objet JSON valide (aucun texte avant/après, aucun bloc de code), respectant EXACTEMENT ce schéma :
 
-RÈGLES D'ÉCRITURE :
-- Pas d'introductions génériques ("Dans un monde en constante évolution...").
-- Pas de ton sensationnaliste.
-- Ne reprends pas la structure exacte de la source.
-- Rends STRICTEMENT le bloc Frontmatter YAML suivi du corps Markdown, sans aucun texte avant ni après (pas de texte d'introduction ou de conclusion).`;
-
-// 3. Le Prompt Utilisateur (Source + Template dynamique)
-const USER_PROMPT = `Voici la source à analyser et transformer :
-
-- Titre source : ${sourceTitle}
-- Nom de la source : ${sourceName}
-- URL source : ${sourceUrl}
-- Contenu source : ${sourceContent}
-
-Génère le fichier Markdown complet en respectant EXACTEMENT la structure suivante :
-
----
-title: "[Titre informatif, factuel et accrocheur - max 70 caractères]"
-description: "[Synthèse à forte valeur ajoutée en 2 phrases max]"
-pubDate: "${currentDate}"
-category: "${detectedCategory}"
-sourceName: "${sourceName}"
-sourceUrl: "${sourceUrl}"
-keyTakeaways:
-  - "[Point clé 1 : fait ou chiffre central]"
-  - "[Point clé 2 : impact direct sur le secteur]"
-  - "[Point clé 3 : limite ou perspective à surveiller]"
-faq:
-  - question: "[Question technique ou pratique liée au sujet]"
-    answer: "[Réponse claire et directe en 2-3 phrases]"
-  - question: "[Autre question fréquente sur le sujet]"
-    answer: "[Réponse claire et directe en 2-3 phrases]"
----
-
-## 💡 En résumé : Ce qu'il faut retenir
-
-[Analyse d'introduction de 2 paragraphes. Présente le fait principal et sa portée.]
-
-## 🔎 Contexte & Enjeux
-
-[Explique pourquoi cette annonce arrive maintenant. Quel est l'historique et les enjeux du marché ?]
-
-## 🛠️ Analyse technique & Impact direct
-
-[Détaille le fonctionnement, les gains de performance ou les changements concrets pour les utilisateurs/développeurs.]
-
-## 🔮 Ce que cela change pour la suite
-
-[Conclusion prospective sur les risques, l'adoption ou les prochaines étapes.]`;
-
-  const result = await model.generateContent(prompt);
-  let responseText = result.response.text().trim();
-  
-  // Nettoyage si le modèle entoure de ```json ... ```
- // Nettoyage des balises Markdown résiduelles éventuelles
-let markdownContent = aiResponseText
-  .replace(/^```markdown/i, '')
-  .replace(/^```/, '')
-  .replace(/```$/, '')
-  .trim();
-
-// Écriture du fichier Markdown dans le dossier src/content/
-const fileName = `${Date.now()}-${slugify(articleTitle)}.md`;
-fs.writeFileSync(`./src/content/${fileName}`, markdownContent);
-
-  if (responseText.startsWith('```')) {
-    responseText = responseText.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
-  }
+{
+  "title": "Titre journalistique en français, factuel et percutant (max 70 caractères)",
+  "description": "Méta-description SEO, 140-160 caractères",
+  "category": "une valeur EXACTE parmi : ${CATEGORIES.join(', ')}",
+  "keyTakeaways": ["Point clé 1", "Point clé 2", "Point clé 3", "Point clé 4", "Point clé 5"],
+  "faq": [
+    { "question": "Question fréquente 1 ?", "answer": "Réponse claire en 2-3 phrases." },
+    { "question": "Question fréquente 2 ?", "answer": "Réponse claire en 2-3 phrases." }
+  ],
+  "body": "Corps de l'article en Markdown avec sections ## Contexte & Enjeux, ## Analyse technique & Impact, ## Ce que cela change pour la suite. Ne cite pas et ne reproduis pas l'URL source dans le corps."
+}`;
 
   let parsed;
   try {
-    parsed = JSON.parse(responseText);
-  } catch (err) {
-    console.error("❌ Erreur de parsing JSON depuis Gemini :", responseText);
+    parsed = await callGemini(apiKey, prompt);
+  } catch (e) {
+    console.error('❌ Erreur Gemini, publication annulée (aucun fichier écrit) :', e.message);
     process.exit(1);
   }
 
+  if (!parsed.title || !parsed.body) {
+    console.error('❌ Champs essentiels manquants dans la réponse JSON, publication annulée.');
+    process.exit(1);
+  }
+
+  const finalCategory = CATEGORIES.includes(parsed.category) ? parsed.category : suggestedCategory;
+  const keyTakeaways = Array.isArray(parsed.keyTakeaways) && parsed.keyTakeaways.length
+    ? parsed.keyTakeaways
+    : ['Analyse en cours de complément.'];
+  const faq = Array.isArray(parsed.faq) && parsed.faq.length
+    ? parsed.faq
+    : [];
+
+  const pubDate = new Date().toISOString();
   const slug = slugify(parsed.title);
-  const dateStr = new Date().toISOString().split('T')[0];
-  const filename = `${dateStr}-${slug}.md`;
+  const filename = `${Date.now()}-${slug}.md`;
   const filePath = path.join(CONTENT_DIR, filename);
 
-  const fileContent = `---
-title: ${JSON.stringify(parsed.title)}
-description: ${JSON.stringify(parsed.description)}
-pubDate: ${new Date().toISOString()}
-category: ${JSON.stringify(parsed.category || 'technologie')}
-sourceUrl: ${JSON.stringify(selectedItem.link)}
-sourceName: ${JSON.stringify(selectedItem.source || 'Google News')}
-keyTakeaways:
-${parsed.keyTakeaways ? parsed.keyTakeaways.map(k => `  - ${JSON.stringify(k)}`).join('\n') : '  - Tout savoir sur les dernières innovations.'}
-faq:
-${parsed.faq ? parsed.faq.map(f => `  - question: ${JSON.stringify(f.question)}\n    answer: ${JSON.stringify(f.answer)}`).join('\n') : ''}
----
+  // JSON.stringify() produit une syntaxe d'échappement valide pour un scalaire YAML entre
+  // guillemets doubles (guillemets, antislashs et retours à la ligne correctement échappés) :
+  // c'est ce qui empêche tout risque de YAML cassé, quel que soit le contenu généré par l'IA.
+  const frontmatterLines = [
+    '---',
+    `title: ${JSON.stringify(parsed.title)}`,
+    `description: ${JSON.stringify(parsed.description || '')}`,
+    `pubDate: ${JSON.stringify(pubDate)}`,
+    `category: ${JSON.stringify(finalCategory)}`,
+    `sourceName: ${JSON.stringify(sourceName)}`,
+    `sourceUrl: ${JSON.stringify(selectedItem.link || '')}`,
+    'keyTakeaways:',
+    ...keyTakeaways.map((k) => `  - ${JSON.stringify(k)}`),
+  ];
 
-${parsed.content}
-`;
+  if (faq.length > 0) {
+    frontmatterLines.push('faq:');
+    for (const f of faq) {
+      frontmatterLines.push(`  - question: ${JSON.stringify(f.question || '')}`);
+      frontmatterLines.push(`    answer: ${JSON.stringify(f.answer || '')}`);
+    }
+  }
+  frontmatterLines.push('---', '', parsed.body, '');
 
-  fs.writeFileSync(filePath, fileContent, 'utf-8');
-  console.log(`🚀 Article créé avec succès : ${filename}`);
+  if (!fs.existsSync(CONTENT_DIR)) {
+    fs.mkdirSync(CONTENT_DIR, { recursive: true });
+  }
+  fs.writeFileSync(filePath, frontmatterLines.join('\n'), 'utf-8');
+  console.log(`✅ Article publié avec succès : ${filename}`);
 }
 
-run();
-
+run().catch((err) => {
+  console.error('❌ Erreur fatale :', err);
+  process.exit(1);
+});

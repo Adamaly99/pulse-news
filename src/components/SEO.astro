@@ -5,31 +5,50 @@ export interface Props {
   canonicalURL?: string;
   image?: string;
   type?: 'website' | 'article';
+  author?: string;
+  datePublished?: string;
 }
+
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop&q=80';
 
 const {
   title,
   description,
   canonicalURL = Astro.url.href,
-  image = '/favicon.svg',
-  type = 'website'
+  image = DEFAULT_IMAGE,
+  type = 'website',
+  author = 'PulseNews',
+  datePublished,
 } = Astro.props;
+
+const absoluteImage = new URL(image, Astro.site || Astro.url).toString();
+const logoUrl = new URL('/favicon.svg', Astro.site || Astro.url).toString();
 
 const schemaData = {
   "@context": "https://schema.org",
   "@type": type === 'article' ? 'NewsArticle' : 'WebSite',
+  "headline": title,
   "name": title,
   "description": description,
   "url": canonicalURL,
   "inLanguage": "fr-FR",
+  ...(type === 'article' && {
+    "image": [absoluteImage],
+    "datePublished": datePublished,
+    "dateModified": datePublished,
+    "author": {
+      "@type": "Person",
+      "name": author,
+    },
+  }),
   "publisher": {
     "@type": "Organization",
     "name": "PulseNews",
     "logo": {
       "@type": "ImageObject",
-      "url": new URL('/favicon.svg', Astro.site || Astro.url).toString()
-    }
-  }
+      "url": logoUrl,
+    },
+  },
 };
 ---
 
@@ -43,14 +62,14 @@ const schemaData = {
 <meta property="og:url" content={canonicalURL} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
-<meta property="og:image" content={image} />
+<meta property="og:image" content={absoluteImage} />
 
 <!-- Twitter Meta -->
 <meta property="twitter:card" content="summary_large_image" />
 <meta property="twitter:url" content={canonicalURL} />
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
-<meta property="twitter:image" content={image} />
+<meta property="twitter:image" content={absoluteImage} />
 
 <!-- Schema.org JSON-LD -->
 <script type="application/ld+json" set:html={JSON.stringify(schemaData)}></script>

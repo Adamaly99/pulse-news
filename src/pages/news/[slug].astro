@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import ReaderExperience from '../../components/ReaderExperience.astro';
+import RelatedArticles from '../../components/RelatedArticles.astro';
 
 export async function getStaticPaths() {
   const posts = await Astro.glob('../../content/**/*.md');
@@ -14,6 +16,7 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const Content = post.Content;
+const rawContent = await post.rawContent();
 
 const frontmatter = post.frontmatter || {};
 const title = frontmatter.title || 'Article';
@@ -24,6 +27,8 @@ const keyTakeaways = Array.isArray(frontmatter.keyTakeaways) ? frontmatter.keyTa
 const faq = Array.isArray(frontmatter.faq) ? frontmatter.faq : [];
 const sourceUrl = frontmatter.sourceUrl || '';
 const sourceName = frontmatter.sourceName || '';
+const author = frontmatter.author || 'PulseNews';
+const slug = post.file.split('/').pop().replace('.md', '');
 
 const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
   year: 'numeric',
@@ -32,7 +37,7 @@ const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
 });
 ---
 
-<BaseLayout title={title} description={description} article={true}>
+<BaseLayout title={title} description={description} article={true} author={author} datePublished={pubDate}>
   <article class="news-article">
     <header class="article-header">
       <span class="category-badge">{category}</span>
@@ -46,6 +51,8 @@ const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
         )}
       </div>
     </header>
+
+    <ReaderExperience contentText={rawContent} />
 
     {keyTakeaways.length > 0 && (
       <section class="takeaways-box">
@@ -75,6 +82,8 @@ const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
         </div>
       </section>
     )}
+
+    <RelatedArticles currentSlug={slug} category={category} />
   </article>
 
   {faq.length > 0 && (
@@ -120,7 +129,7 @@ const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
   .meta {
     color: #94a3b8;
     font-size: 0.875rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
 
   .meta a {

@@ -1,15 +1,5 @@
 import rss from '@astrojs/rss';
 
-function xmlEscape(str) {
-  if (!str) return '';
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
 export async function GET(context) {
   const posts = await import.meta.glob('../content/**/*.md', { eager: true });
   const postList = Object.values(posts);
@@ -22,9 +12,11 @@ export async function GET(context) {
       const slug = post.file.split('/').pop().replace('.md', '');
       const frontmatter = post.frontmatter || {};
       return {
-        title: xmlEscape(frontmatter.title || 'Article PulseNews'),
+        // @astrojs/rss échappe déjà les caractères spéciaux XML en interne (via fast-xml-parser).
+        // Échapper ici en plus provoquerait un double-échappement (ex: "R&D" -> "R&amp;amp;D").
+        title: frontmatter.title || 'Article PulseNews',
         pubDate: new Date(frontmatter.pubDate || Date.now()),
-        description: xmlEscape(frontmatter.description || ''),
+        description: frontmatter.description || '',
         link: `/news/${slug}/`,
       };
     }),

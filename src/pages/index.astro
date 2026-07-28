@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-const posts = await Astro.glob('../content/*.md');
+const posts = await Astro.glob('../content/**/*.md');
 
 const sortedPosts = posts.sort((a, b) => {
   const dateA = new Date(a.frontmatter.pubDate || 0).getTime();
