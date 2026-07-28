@@ -83,24 +83,65 @@ async function run() {
 
   console.log(`📰 Nouvel article trouvé : "${selectedItem.title}"`);
 
-  const prompt = `
-Tu es un journaliste tech expert pour PulseNews. Réécris cet article sous forme d'une analyse complète en français.
-Source d'origine : "${selectedItem.title}" (${selectedItem.link})
-Contenu extrait : "${selectedItem.contentSnippet || selectedItem.content || ''}"
+  
+// 1. Date courante au format ISO pour le Frontmatter
+const currentDate = new Date().toISOString();
 
-Réponds STRICTEMENT sous forme d'objet JSON respectant ce schéma exact (sans balises markdown supplémentaires) :
-{
-  "title": "Titre accrocheur et unique",
-  "description": "Résumé de 2 phrases maximum",
-  "category": "intelligence-artificielle" | "cybersecurite" | "technologie",
-  "keyTakeaways": ["Point 1", "Point 2", "Point 3"],
-  "faq": [
-    {"question": "Question 1 ?", "answer": "Réponse 1"},
-    {"question": "Question 2 ?", "answer": "Réponse 2"}
-  ],
-  "content": "Corps de l'article au format Markdown..."
-}
-`;
+// 2. Le Prompt Système (Règles d'écriture)
+const SYSTEM_PROMPT = `Tu es le Rédacteur en Chef Technique de PulseNews, un média spécialisé dans l'actualité Tech, l'IA et le développement.
+
+TA MISSION :
+Rédiger un article d'analyse complet en Markdown à partir de la source fournie. Tu ne dois JAMAIS te contenter de paraphraser la source. Tu dois apporter de la valeur ajoutée en synthétisant, en remettant dans son contexte historique/marché et en expliquant l'impact concret.
+
+RÈGLES D'ÉCRITURE :
+- Pas d'introductions génériques ("Dans un monde en constante évolution...").
+- Pas de ton sensationnaliste.
+- Ne reprends pas la structure exacte de la source.
+- Rends STRICTEMENT le bloc Frontmatter YAML suivi du corps Markdown, sans aucun texte avant ni après (pas de texte d'introduction ou de conclusion).`;
+
+// 3. Le Prompt Utilisateur (Source + Template dynamique)
+const USER_PROMPT = `Voici la source à analyser et transformer :
+
+- Titre source : ${sourceTitle}
+- Nom de la source : ${sourceName}
+- URL source : ${sourceUrl}
+- Contenu source : ${sourceContent}
+
+Génère le fichier Markdown complet en respectant EXACTEMENT la structure suivante :
+
+---
+title: "[Titre informatif, factuel et accrocheur - max 70 caractères]"
+description: "[Synthèse à forte valeur ajoutée en 2 phrases max]"
+pubDate: "${currentDate}"
+category: "${detectedCategory}"
+sourceName: "${sourceName}"
+sourceUrl: "${sourceUrl}"
+keyTakeaways:
+  - "[Point clé 1 : fait ou chiffre central]"
+  - "[Point clé 2 : impact direct sur le secteur]"
+  - "[Point clé 3 : limite ou perspective à surveiller]"
+faq:
+  - question: "[Question technique ou pratique liée au sujet]"
+    answer: "[Réponse claire et directe en 2-3 phrases]"
+  - question: "[Autre question fréquente sur le sujet]"
+    answer: "[Réponse claire et directe en 2-3 phrases]"
+---
+
+## 💡 En résumé : Ce qu'il faut retenir
+
+[Analyse d'introduction de 2 paragraphes. Présente le fait principal et sa portée.]
+
+## 🔎 Contexte & Enjeux
+
+[Explique pourquoi cette annonce arrive maintenant. Quel est l'historique et les enjeux du marché ?]
+
+## 🛠️ Analyse technique & Impact direct
+
+[Détaille le fonctionnement, les gains de performance ou les changements concrets pour les utilisateurs/développeurs.]
+
+## 🔮 Ce que cela change pour la suite
+
+[Conclusion prospective sur les risques, l'adoption ou les prochaines étapes.]`;
 
   const result = await model.generateContent(prompt);
   let responseText = result.response.text().trim();
