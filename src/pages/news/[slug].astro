@@ -13,7 +13,7 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { Content } = await post.render();
+const Content = post.Content;
 
 const frontmatter = post.frontmatter || {};
 const title = frontmatter.title || 'Article';
@@ -180,4 +180,3 @@ const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
     margin-bottom: 0.5rem;
   }
 </style>
-
