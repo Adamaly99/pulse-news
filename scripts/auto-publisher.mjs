@@ -83,7 +83,13 @@ async function run() {
 
   console.log(`📰 Nouvel article trouvé : "${selectedItem.title}"`);
 
-  
+  // Définir les variables à partir de l'élément RSS (item)
+const sourceTitle = item.title || "Titre non disponible";
+const sourceUrl = item.link || "";
+const sourceContent = item.contentSnippet || item.content || item.title;
+const sourceName = item.creator || "Flux RSS";
+const detectedCategory = "technologie"; // ou la catégorie détectée
+
 // 1. Date courante au format ISO pour le Frontmatter
 const currentDate = new Date().toISOString();
 
