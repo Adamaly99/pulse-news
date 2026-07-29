@@ -12,6 +12,7 @@ const CATEGORIES = [
   'apple',
   'cloud',
   'startups',
+  'robotique',
 ];
 
 // Une image réellement liée au sujet de chaque catégorie (au lieu d'une bannière générique unique)
@@ -22,16 +23,30 @@ const THUMBNAILS = {
   'apple': 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=1200&auto=format&fit=crop&q=80',
   'cloud': 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=1200&auto=format&fit=crop&q=80',
   'startups': 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&auto=format&fit=crop&q=80',
+  'robotique': 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1200&auto=format&fit=crop&q=80',
 };
 
-// Plusieurs requêtes RSS pour couvrir davantage de catégories, pas seulement IA/cybersécurité
+// Plusieurs requêtes par catégorie, réparties par grand acteur/sujet, pour éviter qu'un seul
+// fil (ex: "intelligence artificielle" générique) ne fasse remonter toujours la même actu
+// dominante du moment (ex: OTAN) et donne l'impression que le média ne traite qu'un seul sujet.
 const RSS_FEEDS = [
   { url: 'https://news.google.com/rss/search?q=intelligence+artificielle&hl=fr&gl=FR&ceid=FR:fr', category: 'intelligence-artificielle' },
+  { url: 'https://news.google.com/rss/search?q=OpenAI&hl=fr&gl=FR&ceid=FR:fr', category: 'intelligence-artificielle' },
+  { url: 'https://news.google.com/rss/search?q=Google+IA+Gemini&hl=fr&gl=FR&ceid=FR:fr', category: 'intelligence-artificielle' },
+  { url: 'https://news.google.com/rss/search?q=Anthropic+Claude+IA&hl=fr&gl=FR&ceid=FR:fr', category: 'intelligence-artificielle' },
+  { url: 'https://news.google.com/rss/search?q=Microsoft+intelligence+artificielle&hl=fr&gl=FR&ceid=FR:fr', category: 'intelligence-artificielle' },
+  { url: 'https://news.google.com/rss/search?q=NVIDIA&hl=fr&gl=FR&ceid=FR:fr', category: 'intelligence-artificielle' },
   { url: 'https://news.google.com/rss/search?q=cybersecurite&hl=fr&gl=FR&ceid=FR:fr', category: 'cybersecurite' },
+  { url: 'https://news.google.com/rss/search?q=cyberattaque+piratage&hl=fr&gl=FR&ceid=FR:fr', category: 'cybersecurite' },
   { url: 'https://news.google.com/rss/search?q=android+smartphone&hl=fr&gl=FR&ceid=FR:fr', category: 'android' },
+  { url: 'https://news.google.com/rss/search?q=Samsung+Xiaomi+smartphone&hl=fr&gl=FR&ceid=FR:fr', category: 'android' },
   { url: 'https://news.google.com/rss/search?q=apple+iphone&hl=fr&gl=FR&ceid=FR:fr', category: 'apple' },
+  { url: 'https://news.google.com/rss/search?q=Apple+Mac+ios&hl=fr&gl=FR&ceid=FR:fr', category: 'apple' },
   { url: 'https://news.google.com/rss/search?q=cloud+informatique&hl=fr&gl=FR&ceid=FR:fr', category: 'cloud' },
+  { url: 'https://news.google.com/rss/search?q=Microsoft+Azure+cloud&hl=fr&gl=FR&ceid=FR:fr', category: 'cloud' },
   { url: 'https://news.google.com/rss/search?q=startup+technologie+afrique&hl=fr&gl=FR&ceid=FR:fr', category: 'startups' },
+  { url: 'https://news.google.com/rss/search?q=startup+francophone+levee+de+fonds&hl=fr&gl=FR&ceid=FR:fr', category: 'startups' },
+  { url: 'https://news.google.com/rss/search?q=robotique+robot+humanoide&hl=fr&gl=FR&ceid=FR:fr', category: 'robotique' },
 ];
 
 function slugify(text) {
@@ -47,15 +62,39 @@ function slugify(text) {
     .slice(0, 60);
 }
 
-// Toutes les sourceUrl déjà publiées, pour ne jamais republier la même actu deux fois.
-// Compte aussi les catégories déjà publiées, pour équilibrer activement la diversité éditoriale.
+// Normalise un titre pour la comparaison de doublons : Google News réémet parfois un lien de
+// redirection légèrement différent (token encodé différent) pour EXACTEMENT la même actu quand
+// le flux est re-servi à un autre moment. Comparer l'URL brute ne suffit donc pas : on compare
+// aussi le titre original (avant réécriture par l'IA) une fois normalisé.
+function normalizeTitle(text) {
+  return (text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Les liens de redirection Google News pour une même actu partagent un long préfixe commun,
+// même quand le token diverge plus loin dans la chaîne (observé empiriquement). Comparer un
+// préfixe suffisamment long attrape ces quasi-doublons qu'une comparaison exacte laisse passer.
+function urlFingerprint(url) {
+  return (url || '').slice(0, 80);
+}
+
+// Toutes les sourceUrl déjà publiées (URL exacte + empreinte de préfixe + titre normalisé),
+// pour ne jamais republier la même actu deux fois, même si Google News change légèrement le
+// lien. Compte aussi les catégories déjà publiées, pour équilibrer la diversité éditoriale.
 function getPublishedState() {
   const publishedUrls = new Set();
+  const publishedUrlFingerprints = new Set();
+  const publishedTitles = new Set();
   const categoryCounts = Object.fromEntries(CATEGORIES.map((c) => [c, 0]));
 
   if (!fs.existsSync(CONTENT_DIR)) {
     fs.mkdirSync(CONTENT_DIR, { recursive: true });
-    return { publishedUrls, categoryCounts };
+    return { publishedUrls, publishedUrlFingerprints, publishedTitles, categoryCounts };
   }
   const files = fs.readdirSync(CONTENT_DIR).filter((f) => f.endsWith('.md'));
   for (const file of files) {
@@ -63,19 +102,26 @@ function getPublishedState() {
     const urlMatch = content.match(/^sourceUrl:\s*"((?:[^"\\]|\\.)*)"/m);
     if (urlMatch && urlMatch[1]) {
       publishedUrls.add(urlMatch[1]);
+      publishedUrlFingerprints.add(urlFingerprint(urlMatch[1]));
+    }
+    const sourceTitleMatch = content.match(/^sourceTitle:\s*"((?:[^"\\]|\\.)*)"/m);
+    if (sourceTitleMatch && sourceTitleMatch[1]) {
+      publishedTitles.add(normalizeTitle(sourceTitleMatch[1]));
     }
     const catMatch = content.match(/^category:\s*"((?:[^"\\]|\\.)*)"/m);
     if (catMatch && catMatch[1] && categoryCounts[catMatch[1]] !== undefined) {
       categoryCounts[catMatch[1]] += 1;
     }
   }
-  return { publishedUrls, categoryCounts };
+  return { publishedUrls, publishedUrlFingerprints, publishedTitles, categoryCounts };
 }
 
 // Choisit un article jamais publié. Les flux sont essayés en priorité pour les catégories
 // les MOINS publiées jusqu'ici (plutôt qu'un ordre purement aléatoire), pour que la diversité
-// éditoriale s'équilibre activement au lieu de dépendre du hasard.
-async function pickUnpublishedItem(publishedUrls, categoryCounts) {
+// éditoriale s'équilibre activement au lieu de dépendre du hasard. Un item est écarté s'il
+// correspond à une URL déjà vue, à une empreinte d'URL déjà vue, OU à un titre déjà vu une
+// fois normalisé (couvre le cas où Google ré-émet un lien différent pour la même actu).
+async function pickUnpublishedItem(publishedUrls, publishedUrlFingerprints, publishedTitles, categoryCounts) {
   const orderedFeeds = [...RSS_FEEDS].sort(
     (a, b) => (categoryCounts[a.category] ?? 0) - (categoryCounts[b.category] ?? 0)
   );
@@ -84,7 +130,13 @@ async function pickUnpublishedItem(publishedUrls, categoryCounts) {
     try {
       const feed = await parser.parseURL(feedConfig.url);
       for (const item of feed.items) {
-        if (item.link && !publishedUrls.has(item.link)) {
+        if (!item.link) continue;
+        const normalized = normalizeTitle(item.title);
+        const isDuplicate =
+          publishedUrls.has(item.link) ||
+          publishedUrlFingerprints.has(urlFingerprint(item.link)) ||
+          publishedTitles.has(normalized);
+        if (!isDuplicate) {
           return { item, suggestedCategory: feedConfig.category };
         }
       }
@@ -126,11 +178,11 @@ async function run() {
     process.exit(1);
   }
 
-  const { publishedUrls, categoryCounts } = getPublishedState();
+  const { publishedUrls, publishedUrlFingerprints, publishedTitles, categoryCounts } = getPublishedState();
   console.log(`ℹ️ ${publishedUrls.size} URLs de sources déjà publiées, elles seront ignorées.`);
   console.log(`ℹ️ Répartition actuelle des catégories :`, categoryCounts);
 
-  const picked = await pickUnpublishedItem(publishedUrls, categoryCounts);
+  const picked = await pickUnpublishedItem(publishedUrls, publishedUrlFingerprints, publishedTitles, categoryCounts);
   if (!picked) {
     console.log('✅ Aucun nouvel article inédit trouvé dans les flux RSS. Arrêt propre, rien à publier.');
     return;
@@ -143,7 +195,7 @@ async function run() {
   const sourceContent = selectedItem.contentSnippet || selectedItem.content || sourceTitle;
   const sourceName = selectedItem.creator || 'Google News';
 
-  const prompt = `Tu es le rédacteur en chef technique de PulseNews, un média francophone spécialisé Tech, IA et cybersécurité.
+  const prompt = `Tu es le rédacteur en chef technique de PulseNews, un média francophone spécialisé Tech : IA, cybersécurité, mobile, cloud, robotique et startups, avec un lectorat francophone et africain.
 
 Rédige une analyse journalistique approfondie (600 à 800 mots) à partir de la source ci-dessous. N'écris JAMAIS une simple paraphrase : apporte du contexte, une mise en perspective marché, et des conséquences concrètes pour les lecteurs.
 
@@ -202,6 +254,7 @@ Réponds UNIQUEMENT avec un objet JSON valide (aucun texte avant/après, aucun b
     `category: ${JSON.stringify(finalCategory)}`,
     `sourceName: ${JSON.stringify(sourceName)}`,
     `sourceUrl: ${JSON.stringify(selectedItem.link || '')}`,
+    `sourceTitle: ${JSON.stringify(sourceTitle)}`,
     `image: ${JSON.stringify(THUMBNAILS[finalCategory] || THUMBNAILS['intelligence-artificielle'])}`,
     'keyTakeaways:',
     ...keyTakeaways.map((k) => `  - ${JSON.stringify(k)}`),

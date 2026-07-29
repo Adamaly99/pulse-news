@@ -1,7 +1,7 @@
 ---
 title: "IA Ouverte: L'Alliance Stratégique des Géants Tech Américains"
 description: "Nvidia, Microsoft, Google s'allient pour l'IA ouverte. Analyse des enjeux stratégiques, sécurité, innovation et l'avenir des modèles d'IA face à la régulation."
-pubDate: "2024-07-27T19:10:22.555Z"
+pubDate: "2026-07-27T19:10:22.555Z"
 category: "intelligence-artificielle"
 author: "Alexandre Dupont"
 sourceName: "Presse Spécialisée"
