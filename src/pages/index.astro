@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
+const PAGE_SIZE = 10;
+
 const posts = await Astro.glob('../content/**/*.md');
 
 const sortedPosts = posts.sort((a, b) => {
@@ -10,53 +12,92 @@ const sortedPosts = posts.sort((a, b) => {
 });
 
 const featuredPost = sortedPosts[0];
-const otherPosts = sortedPosts.slice(1);
+const pagePosts = sortedPosts.slice(1, PAGE_SIZE + 1);
+const totalPages = Math.max(1, Math.ceil((sortedPosts.length - 1) / PAGE_SIZE));
+const hasNextPage = totalPages > 1;
+
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop&q=80';
 ---
 
-<BaseLayout title="PulseNews — L'actualité Tech & IA" description="Suivez les dernières innovations tech, IA, et cybersécurité.">
+<BaseLayout
+  title="PulseNews — Actualité IA, Tech & Cybersécurité en Afrique francophone"
+  description="Actualité intelligence artificielle, cybersécurité, Android, Apple et startups tech, décryptée pour un lectorat francophone et africain. Analyses claires, sources vérifiables."
+>
   <main class="container">
     <header class="hero">
-      <h1>Dernières Actualités Tech & IA</h1>
-      <p>Analyses, tendances et décryptage de l'écosystème numérique.</p>
+      <h1>Actualité Tech, IA & Cybersécurité — décryptée pour l'Afrique francophone</h1>
+      <p>Analyses, tendances et décryptage de l'écosystème numérique, avec une attention particulière à ce que ça change concrètement pour les lecteurs francophones et africains.</p>
     </header>
 
     {featuredPost && (
       <section class="featured-card">
-        <span class="badge">{featuredPost.frontmatter.category || 'Tech'}</span>
-        <h2>
-          <a href={`/news/${featuredPost.file.split('/').pop().replace('.md', '')}/`}>
-            {featuredPost.frontmatter.title}
-          </a>
-        </h2>
-        <p>{featuredPost.frontmatter.description}</p>
+        <img
+          src={featuredPost.frontmatter.image || DEFAULT_IMAGE}
+          alt={featuredPost.frontmatter.title}
+          width="1200"
+          height="630"
+          loading="eager"
+        />
+        <div class="featured-content">
+          <span class="badge">{featuredPost.frontmatter.category || 'Tech'}</span>
+          <h2>
+            <a href={`/news/${featuredPost.file.split('/').pop().replace('.md', '')}/`}>
+              {featuredPost.frontmatter.title}
+            </a>
+          </h2>
+          <p>{featuredPost.frontmatter.description}</p>
+        </div>
       </section>
     )}
 
     <section class="articles-grid">
-      {otherPosts.map((post) => {
+      {pagePosts.map((post) => {
         const slug = post.file.split('/').pop().replace('.md', '');
         return (
           <article class="card">
-            <span class="badge">{post.frontmatter.category || 'Tech'}</span>
-            <h3>
-              <a href={`/news/${slug}/`}>{post.frontmatter.title}</a>
-            </h3>
-            <p>{post.frontmatter.description}</p>
+            <img
+              src={post.frontmatter.image || DEFAULT_IMAGE}
+              alt={post.frontmatter.title}
+              width="400"
+              height="225"
+              loading="lazy"
+            />
+            <div class="card-content">
+              <span class="badge">{post.frontmatter.category || 'Tech'}</span>
+              <h3>
+                <a href={`/news/${slug}/`}>{post.frontmatter.title}</a>
+              </h3>
+              <p>{post.frontmatter.description}</p>
+            </div>
           </article>
         );
       })}
     </section>
+
+    {hasNextPage && (
+      <nav class="pagination" aria-label="Pagination">
+        <a href="/page/2/">Articles plus anciens →</a>
+      </nav>
+    )}
   </main>
 </BaseLayout>
 
 <style>
   .container { max-width: 1000px; margin: 0 auto; padding: 2rem 1rem; }
   .hero { text-align: center; margin-bottom: 3rem; }
-  .hero h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
-  .featured-card { background: #1e293b; padding: 2rem; border-radius: 0.75rem; margin-bottom: 3rem; border-left: 4px solid #38bdf8; }
+  .hero h1 { font-size: 2.2rem; margin-bottom: 0.5rem; line-height: 1.3; }
+  .hero p { color: #94a3b8; }
+  .featured-card { background: #1e293b; border-radius: 0.75rem; margin-bottom: 3rem; border-left: 4px solid #38bdf8; overflow: hidden; }
+  .featured-card img { width: 100%; height: 320px; object-fit: cover; display: block; }
+  .featured-content { padding: 2rem; }
   .featured-card h2 a { color: #f8fafc; font-size: 1.75rem; text-decoration: none; }
   .articles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-  .card { background: #1e293b; padding: 1.5rem; border-radius: 0.5rem; }
+  .card { background: #1e293b; border-radius: 0.5rem; overflow: hidden; }
+  .card img { width: 100%; height: 160px; object-fit: cover; display: block; }
+  .card-content { padding: 1.5rem; }
   .card h3 a { color: #f8fafc; text-decoration: none; }
   .badge { display: inline-block; background: #38bdf8; color: #0f172a; font-size: 0.75rem; font-weight: bold; padding: 0.2rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; text-transform: uppercase; }
+  .pagination { text-align: center; margin-top: 3rem; }
+  .pagination a { color: #38bdf8; font-weight: 600; text-decoration: none; }
+  .pagination a:hover { text-decoration: underline; }
 </style>

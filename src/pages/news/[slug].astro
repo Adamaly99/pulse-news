@@ -29,6 +29,28 @@ const sourceUrl = frontmatter.sourceUrl || '';
 const sourceName = frontmatter.sourceName || '';
 const author = frontmatter.author || 'PulseNews';
 const slug = post.file.split('/').pop().replace('.md', '');
+const image = frontmatter.image || '';
+
+const categoryLabels = {
+  'intelligence-artificielle': 'Intelligence Artificielle',
+  'cybersecurite': 'Cybersécurité',
+  'android': 'Android',
+  'apple': 'Apple',
+  'cloud': 'Cloud',
+  'startups': 'Startups',
+  'technologie': 'Technologie',
+};
+const categoryLabel = categoryLabels[category] || category;
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Accueil", "item": Astro.site ? new URL('/', Astro.site).toString() : '/' },
+    { "@type": "ListItem", "position": 2, "name": categoryLabel, "item": Astro.site ? new URL(`/category/${category}/`, Astro.site).toString() : `/category/${category}/` },
+    { "@type": "ListItem", "position": 3, "name": title },
+  ],
+};
 
 const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
   year: 'numeric',
@@ -37,8 +59,14 @@ const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
 });
 ---
 
-<BaseLayout title={title} description={description} article={true} author={author} datePublished={pubDate}>
+<BaseLayout title={title} description={description} image={image} article={true} author={author} datePublished={pubDate}>
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+
   <article class="news-article">
+    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+      <a href="/">Accueil</a> <span>›</span> <a href={`/category/${category}/`}>{categoryLabel}</a> <span>›</span> <span aria-current="page">{title}</span>
+    </nav>
+
     <header class="article-header">
       <span class="category-badge">{category}</span>
       <h1>{title}</h1>
@@ -51,6 +79,10 @@ const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
         )}
       </div>
     </header>
+
+    {image && (
+      <img class="hero-image" src={image} alt={title} width="1200" height="630" loading="eager" />
+    )}
 
     <ReaderExperience contentText={rawContent} />
 
@@ -106,6 +138,30 @@ const formattedDate = new Date(pubDate).toLocaleDateString('fr-FR', {
   .news-article {
     max-width: 800px;
     margin: 0 auto;
+  }
+
+  .breadcrumb {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-bottom: 1.5rem;
+  }
+
+  .breadcrumb a {
+    color: #94a3b8;
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--accent-color, #38bdf8);
+  }
+
+  .hero-image {
+    width: 100%;
+    height: auto;
+    max-height: 420px;
+    object-fit: cover;
+    border-radius: 0.75rem;
+    margin-bottom: 2rem;
   }
 
   .category-badge {

@@ -1,0 +1,98 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const PAGE_SIZE = 10;
+  const posts = await Astro.glob('../../content/**/*.md');
+  const sortedPosts = posts.sort((a, b) => {
+    const dateA = new Date(a.frontmatter.pubDate || 0).getTime();
+    const dateB = new Date(b.frontmatter.pubDate || 0).getTime();
+    return dateB - dateA;
+  });
+
+  // Le premier post est "featured" sur la homepage (voir index.astro), donc la pagination
+  // porte sur le reste. Page 1 (les 10 suivants) vit déjà à l'URL "/" : on ne la régénère
+  // jamais ici, pour ne jamais créer de contenu dupliqué entre "/" et "/page/1/".
+  const remainingPosts = sortedPosts.slice(1);
+  const totalPages = Math.max(1, Math.ceil(remainingPosts.length / PAGE_SIZE));
+
+  const paths = [];
+  for (let page = 2; page <= totalPages; page++) {
+    const start = (page - 1) * PAGE_SIZE;
+    paths.push({
+      params: { page: String(page) },
+      props: {
+        posts: remainingPosts.slice(start, start + PAGE_SIZE),
+        currentPage: page,
+        totalPages,
+      },
+    });
+  }
+  return paths;
+}
+
+const { posts, currentPage, totalPages } = Astro.props;
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop&q=80';
+---
+
+<BaseLayout
+  title={`PulseNews — Actualité Tech & IA (page ${currentPage})`}
+  description="Archives des articles PulseNews : intelligence artificielle, cybersécurité, mobile et startups tech."
+>
+  <main class="container">
+    <header class="hero">
+      <h1>Archives — page {currentPage}</h1>
+    </header>
+
+    <section class="articles-grid">
+      {posts.map((post) => {
+        const slug = post.file.split('/').pop().replace('.md', '');
+        return (
+          <article class="card">
+            <img
+              src={post.frontmatter.image || DEFAULT_IMAGE}
+              alt={post.frontmatter.title}
+              width="400"
+              height="225"
+              loading="lazy"
+            />
+            <div class="card-content">
+              <span class="badge">{post.frontmatter.category || 'Tech'}</span>
+              <h3>
+                <a href={`/news/${slug}/`}>{post.frontmatter.title}</a>
+              </h3>
+              <p>{post.frontmatter.description}</p>
+            </div>
+          </article>
+        );
+      })}
+    </section>
+
+    <nav class="pagination" aria-label="Pagination">
+      {currentPage > 2 ? (
+        <a href={`/page/${currentPage - 1}/`}>← Plus récent</a>
+      ) : (
+        <a href="/">← Plus récent</a>
+      )}
+      <span>Page {currentPage} / {totalPages}</span>
+      {currentPage < totalPages && (
+        <a href={`/page/${currentPage + 1}/`}>Plus ancien →</a>
+      )}
+    </nav>
+  </main>
+</BaseLayout>
+
+<style>
+  .container { max-width: 1000px; margin: 0 auto; padding: 2rem 1rem; }
+  .hero { text-align: center; margin-bottom: 3rem; }
+  .hero h1 { font-size: 2rem; }
+  .articles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+  .card { background: #1e293b; border-radius: 0.5rem; overflow: hidden; }
+  .card img { width: 100%; height: 160px; object-fit: cover; display: block; }
+  .card-content { padding: 1.5rem; }
+  .card h3 a { color: #f8fafc; text-decoration: none; }
+  .badge { display: inline-block; background: #38bdf8; color: #0f172a; font-size: 0.75rem; font-weight: bold; padding: 0.2rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; text-transform: uppercase; }
+  .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 3rem; color: #94a3b8; }
+  .pagination a { color: #38bdf8; font-weight: 600; text-decoration: none; }
+  .pagination a:hover { text-decoration: underline; }
+</style>

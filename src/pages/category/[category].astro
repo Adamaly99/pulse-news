@@ -1,14 +1,47 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
+const CATEGORY_META = {
+  'intelligence-artificielle': {
+    label: 'Intelligence Artificielle',
+    intro: "Toute l'actualité intelligence artificielle en français : modèles IA, outils, impact sur l'économie et le marché de l'emploi en Afrique francophone.",
+  },
+  'cybersecurite': {
+    label: 'Cybersécurité',
+    intro: "Actualité cybersécurité : failles, cyberattaques, protection des données personnelles et professionnelles pour les entreprises et particuliers francophones.",
+  },
+  'android': {
+    label: 'Android',
+    intro: "Actualité Android : nouveaux smartphones, mises à jour, applications et bons plans mobiles pour l'écosystème Android francophone.",
+  },
+  'apple': {
+    label: 'Apple',
+    intro: "Actualité Apple : iPhone, iOS, MacBook et l'écosystème Apple, décryptés en français.",
+  },
+  'cloud': {
+    label: 'Cloud',
+    intro: "Actualité cloud computing : infrastructure, hébergement et transformation numérique des entreprises francophones.",
+  },
+  'startups': {
+    label: 'Startups Tech',
+    intro: "Actualité des startups technologiques, avec un focus sur l'écosystème entrepreneurial tech en Afrique francophone.",
+  },
+  'technologie': {
+    label: 'Technologie',
+    intro: "Actualité technologique généraliste : innovations, tendances et analyses.",
+  },
+};
+
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop&q=80';
+
 export async function getStaticPaths() {
   const posts = await Astro.glob('../../content/**/*.md');
   const categories = [...new Set(posts.map((p) => (p.frontmatter.category || 'technologie').toLowerCase()))];
 
   return categories.map((category) => {
-    const filteredPosts = posts.filter(
-      (p) => (p.frontmatter.category || 'technologie').toLowerCase() === category
-    );
+    const filteredPosts = posts
+      .filter((p) => (p.frontmatter.category || 'technologie').toLowerCase() === category)
+      .sort((a, b) => new Date(b.frontmatter.pubDate || 0).getTime() - new Date(a.frontmatter.pubDate || 0).getTime());
     return {
       params: { category },
       props: { posts: filteredPosts },
@@ -18,20 +51,50 @@ export async function getStaticPaths() {
 
 const { category } = Astro.params;
 const { posts } = Astro.props;
+const meta = CATEGORY_META[category] || { label: category, intro: `Tous les articles de la catégorie ${category}.` };
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Accueil", "item": Astro.site ? new URL('/', Astro.site).toString() : '/' },
+    { "@type": "ListItem", "position": 2, "name": meta.label },
+  ],
+};
 ---
 
-<BaseLayout title={`Catégorie : ${category}`} description={`Tous les articles de la catégorie ${category}`}>
+<BaseLayout
+  title={`${meta.label} — Actualité & Analyses | PulseNews`}
+  description={meta.intro}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+
   <main class="container">
-    <h1>Catégorie : <span class="highlight">{category}</span></h1>
+    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+      <a href="/">Accueil</a> <span>›</span> <span aria-current="page">{meta.label}</span>
+    </nav>
+
+    <h1>{meta.label}</h1>
+    <p class="category-intro">{meta.intro}</p>
+
     <div class="articles-grid">
       {posts.map((post) => {
         const slug = post.file.split('/').pop().replace('.md', '');
         return (
           <article class="card">
-            <h2>
-              <a href={`/news/${slug}/`}>{post.frontmatter.title}</a>
-            </h2>
-            <p>{post.frontmatter.description}</p>
+            <img
+              src={post.frontmatter.image || DEFAULT_IMAGE}
+              alt={post.frontmatter.title}
+              width="400"
+              height="225"
+              loading="lazy"
+            />
+            <div class="card-content">
+              <h2>
+                <a href={`/news/${slug}/`}>{post.frontmatter.title}</a>
+              </h2>
+              <p>{post.frontmatter.description}</p>
+            </div>
           </article>
         );
       })}
@@ -41,9 +104,14 @@ const { posts } = Astro.props;
 
 <style>
   .container { max-width: 1000px; margin: 0 auto; padding: 2rem 1rem; }
-  h1 { font-size: 2rem; margin-bottom: 2rem; text-transform: capitalize; }
-  .highlight { color: #38bdf8; }
+  .breadcrumb { font-size: 0.8rem; color: #94a3b8; margin-bottom: 1.5rem; }
+  .breadcrumb a { color: #94a3b8; text-decoration: none; }
+  .breadcrumb a:hover { color: #38bdf8; }
+  h1 { font-size: 2rem; margin-bottom: 0.75rem; }
+  .category-intro { color: #94a3b8; max-width: 640px; margin-bottom: 2.5rem; line-height: 1.6; }
   .articles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-  .card { background: #1e293b; padding: 1.5rem; border-radius: 0.5rem; }
-  .card h2 a { color: #f8fafc; text-decoration: none; font-size: 1.25rem; }
+  .card { background: #1e293b; border-radius: 0.5rem; overflow: hidden; }
+  .card img { width: 100%; height: 160px; object-fit: cover; display: block; }
+  .card-content { padding: 1.5rem; }
+  .card h2 a { color: #f8fafc; text-decoration: none; font-size: 1.15rem; }
 </style>

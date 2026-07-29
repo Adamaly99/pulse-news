@@ -14,6 +14,16 @@ const CATEGORIES = [
   'startups',
 ];
 
+// Une image réellement liée au sujet de chaque catégorie (au lieu d'une bannière générique unique)
+const THUMBNAILS = {
+  'intelligence-artificielle': 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=1200&auto=format&fit=crop&q=80',
+  'cybersecurite': 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&auto=format&fit=crop&q=80',
+  'android': 'https://images.unsplash.com/photo-1607252650355-f7fd0460ccdb?w=1200&auto=format&fit=crop&q=80',
+  'apple': 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=1200&auto=format&fit=crop&q=80',
+  'cloud': 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=1200&auto=format&fit=crop&q=80',
+  'startups': 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&auto=format&fit=crop&q=80',
+};
+
 // Plusieurs requêtes RSS pour couvrir davantage de catégories, pas seulement IA/cybersécurité
 const RSS_FEEDS = [
   { url: 'https://news.google.com/rss/search?q=intelligence+artificielle&hl=fr&gl=FR&ceid=FR:fr', category: 'intelligence-artificielle' },
@@ -37,30 +47,40 @@ function slugify(text) {
     .slice(0, 60);
 }
 
-// Toutes les sourceUrl déjà publiées, pour ne jamais republier la même actu deux fois
-function getPublishedSourceUrls() {
+// Toutes les sourceUrl déjà publiées, pour ne jamais republier la même actu deux fois.
+// Compte aussi les catégories déjà publiées, pour équilibrer activement la diversité éditoriale.
+function getPublishedState() {
   const publishedUrls = new Set();
+  const categoryCounts = Object.fromEntries(CATEGORIES.map((c) => [c, 0]));
+
   if (!fs.existsSync(CONTENT_DIR)) {
     fs.mkdirSync(CONTENT_DIR, { recursive: true });
-    return publishedUrls;
+    return { publishedUrls, categoryCounts };
   }
   const files = fs.readdirSync(CONTENT_DIR).filter((f) => f.endsWith('.md'));
   for (const file of files) {
     const content = fs.readFileSync(path.join(CONTENT_DIR, file), 'utf-8');
-    const match = content.match(/^sourceUrl:\s*"((?:[^"\\]|\\.)*)"/m);
-    if (match && match[1]) {
-      publishedUrls.add(match[1]);
+    const urlMatch = content.match(/^sourceUrl:\s*"((?:[^"\\]|\\.)*)"/m);
+    if (urlMatch && urlMatch[1]) {
+      publishedUrls.add(urlMatch[1]);
+    }
+    const catMatch = content.match(/^category:\s*"((?:[^"\\]|\\.)*)"/m);
+    if (catMatch && catMatch[1] && categoryCounts[catMatch[1]] !== undefined) {
+      categoryCounts[catMatch[1]] += 1;
     }
   }
-  return publishedUrls;
+  return { publishedUrls, categoryCounts };
 }
 
-// Choisit un article jamais publié, en piochant dans un flux RSS différent à chaque run
-// (ordre mélangé pour éviter de toujours retomber sur la même catégorie)
-async function pickUnpublishedItem(publishedUrls) {
-  const shuffledFeeds = [...RSS_FEEDS].sort(() => Math.random() - 0.5);
+// Choisit un article jamais publié. Les flux sont essayés en priorité pour les catégories
+// les MOINS publiées jusqu'ici (plutôt qu'un ordre purement aléatoire), pour que la diversité
+// éditoriale s'équilibre activement au lieu de dépendre du hasard.
+async function pickUnpublishedItem(publishedUrls, categoryCounts) {
+  const orderedFeeds = [...RSS_FEEDS].sort(
+    (a, b) => (categoryCounts[a.category] ?? 0) - (categoryCounts[b.category] ?? 0)
+  );
 
-  for (const feedConfig of shuffledFeeds) {
+  for (const feedConfig of orderedFeeds) {
     try {
       const feed = await parser.parseURL(feedConfig.url);
       for (const item of feed.items) {
@@ -106,10 +126,11 @@ async function run() {
     process.exit(1);
   }
 
-  const publishedUrls = getPublishedSourceUrls();
+  const { publishedUrls, categoryCounts } = getPublishedState();
   console.log(`ℹ️ ${publishedUrls.size} URLs de sources déjà publiées, elles seront ignorées.`);
+  console.log(`ℹ️ Répartition actuelle des catégories :`, categoryCounts);
 
-  const picked = await pickUnpublishedItem(publishedUrls);
+  const picked = await pickUnpublishedItem(publishedUrls, categoryCounts);
   if (!picked) {
     console.log('✅ Aucun nouvel article inédit trouvé dans les flux RSS. Arrêt propre, rien à publier.');
     return;
@@ -181,6 +202,7 @@ Réponds UNIQUEMENT avec un objet JSON valide (aucun texte avant/après, aucun b
     `category: ${JSON.stringify(finalCategory)}`,
     `sourceName: ${JSON.stringify(sourceName)}`,
     `sourceUrl: ${JSON.stringify(selectedItem.link || '')}`,
+    `image: ${JSON.stringify(THUMBNAILS[finalCategory] || THUMBNAILS['intelligence-artificielle'])}`,
     'keyTakeaways:',
     ...keyTakeaways.map((k) => `  - ${JSON.stringify(k)}`),
   ];

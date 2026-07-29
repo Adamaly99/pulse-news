@@ -11,6 +11,23 @@ interface Props {
 }
 
 const { title, description, image, article = false, author, datePublished } = Astro.props;
+
+const CATEGORY_LABELS = {
+  'intelligence-artificielle': 'IA',
+  'cybersecurite': 'Cybersécurité',
+  'android': 'Android',
+  'apple': 'Apple',
+  'cloud': 'Cloud',
+  'startups': 'Startups',
+  'technologie': 'Technologie',
+};
+const CATEGORY_ORDER = Object.keys(CATEGORY_LABELS);
+
+// La navigation ne liste QUE les catégories qui ont réellement des articles publiés,
+// pour ne jamais pointer vers une page vide (voir audit : liens morts vers /android, /apple).
+const allPosts = await Astro.glob('../content/**/*.md');
+const activeCategories = [...new Set(allPosts.map((p) => (p.frontmatter.category || 'technologie').toLowerCase()))]
+  .sort((a, b) => CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b));
 ---
 
 <!DOCTYPE html>
@@ -19,6 +36,7 @@ const { title, description, image, article = false, author, datePublished } = As
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <SEO title={title} description={description} image={image} type={article ? 'article' : 'website'} author={author} datePublished={datePublished} />
+    <link rel="alternate" type="application/rss+xml" title="PulseNews RSS" href="/rss.xml" />
   </head>
   <body>
     <header class="site-header">
@@ -28,9 +46,9 @@ const { title, description, image, article = false, author, datePublished } = As
         </a>
         <nav class="main-nav">
           <a href="/">Accueil</a>
-          <a href="/category/intelligence-artificielle">IA</a>
-          <a href="/category/cybersecurite">Cybersécurité</a>
-          <a href="/category/technologie">Technologie</a>
+          {activeCategories.map((cat) => (
+            <a href={`/category/${cat}`}>{CATEGORY_LABELS[cat] || cat}</a>
+          ))}
           <a href="/a-propos">À Propos</a>
         </nav>
       </div>
@@ -41,6 +59,13 @@ const { title, description, image, article = false, author, datePublished } = As
     </main>
 
     <footer class="site-footer">
+      <nav class="footer-nav" aria-label="Liens du pied de page">
+        <a href="/equipe">Équipe & Méthode</a>
+        <a href="/contact">Contact</a>
+        <a href="/mentions-legales">Mentions légales</a>
+        <a href="/politique-de-confidentialite">Confidentialité</a>
+        <a href="/rss.xml">Flux RSS</a>
+      </nav>
       <p>&copy; {new Date().getFullYear()} PulseNews. Tous droits réservés.</p>
     </footer>
 
@@ -125,6 +150,23 @@ const { title, description, image, article = false, author, datePublished } = As
         padding: 2rem;
         color: var(--text-muted);
         font-size: 0.875rem;
+      }
+
+      .footer-nav {
+        display: flex;
+        justify-content: center;
+        gap: 1.25rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+
+      .footer-nav a {
+        color: var(--text-muted);
+        text-decoration: none;
+      }
+
+      .footer-nav a:hover {
+        color: var(--accent-color);
       }
     </style>
   </body>
