@@ -34,20 +34,20 @@ const activeCategories = [...new Set(allPosts.map((p) => (p.frontmatter.category
 <!DOCTYPE html>
 <html lang="fr">
   <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-BD5X1MS0ZD"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-BD5X1MS0ZD');
-</script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <SEO title={title} description={description} image={image} type={article ? 'article' : 'website'} author={author} datePublished={datePublished} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate" type="application/rss+xml" title="PulseNews RSS" href="/rss.xml" />
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BD5X1MS0ZD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-BD5X1MS0ZD');
+    </script>
   </head>
   <body>
     <header class="site-header">
