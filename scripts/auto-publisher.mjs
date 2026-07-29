@@ -238,6 +238,15 @@ Réponds UNIQUEMENT avec un objet JSON valide (aucun texte avant/après, aucun b
     ? parsed.faq
     : [];
 
+  // Troncature forcée de la meta description à 155 caractères (limite d'affichage Google) :
+  // on ne compte pas sur le respect de la consigne par l'IA, on le garantit dans le code.
+  function truncateDescription(text, maxLength = 155) {
+    if (!text || text.length <= maxLength) return text || '';
+    const cut = text.slice(0, maxLength - 1);
+    return cut.slice(0, cut.lastIndexOf(' ')) + '…';
+  }
+  const description = truncateDescription(parsed.description);
+
   const pubDate = new Date().toISOString();
   const slug = slugify(parsed.title);
   const filename = `${Date.now()}-${slug}.md`;
@@ -249,7 +258,7 @@ Réponds UNIQUEMENT avec un objet JSON valide (aucun texte avant/après, aucun b
   const frontmatterLines = [
     '---',
     `title: ${JSON.stringify(parsed.title)}`,
-    `description: ${JSON.stringify(parsed.description || '')}`,
+    `description: ${JSON.stringify(description || '')}`,
     `pubDate: ${JSON.stringify(pubDate)}`,
     `category: ${JSON.stringify(finalCategory)}`,
     `sourceName: ${JSON.stringify(sourceName)}`,
