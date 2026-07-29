@@ -37,6 +37,7 @@ const activeCategories = [...new Set(allPosts.map((p) => (p.frontmatter.category
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <SEO title={title} description={description} image={image} type={article ? 'article' : 'website'} author={author} datePublished={datePublished} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate" type="application/rss+xml" title="PulseNews RSS" href="/rss.xml" />
   </head>
   <body>

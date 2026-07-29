@@ -33,6 +33,9 @@ export async function getStaticPaths() {
 
 const { posts, currentPage, totalPages } = Astro.props;
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop&q=80';
+function cardImage(url) {
+  return (url || DEFAULT_IMAGE).replace(/w=\d+/, 'w=500');
+}
 ---
 
 <BaseLayout
@@ -50,7 +53,7 @@ const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1518770660439-4636190af
         return (
           <article class="card">
             <img
-              src={post.frontmatter.image || DEFAULT_IMAGE}
+              src={cardImage(post.frontmatter.image)}
               alt={post.frontmatter.title}
               width="400"
               height="225"

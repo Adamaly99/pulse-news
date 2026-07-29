@@ -17,6 +17,13 @@ const totalPages = Math.max(1, Math.ceil((sortedPosts.length - 1) / PAGE_SIZE));
 const hasNextPage = totalPages > 1;
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop&q=80';
+
+// Les vignettes de carte n'ont pas besoin de la même résolution que l'image héro en pleine
+// largeur : demander une variante plus légère à Unsplash (économie ~27 Kio par image, signalée
+// par Lighthouse) plutôt que de servir un w=1200 dans un cadre de 400px.
+function cardImage(url) {
+  return (url || DEFAULT_IMAGE).replace(/w=\d+/, 'w=500');
+}
 ---
 
 <BaseLayout
@@ -56,7 +63,7 @@ const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1518770660439-4636190af
         return (
           <article class="card">
             <img
-              src={post.frontmatter.image || DEFAULT_IMAGE}
+              src={cardImage(post.frontmatter.image)}
               alt={post.frontmatter.title}
               width="400"
               height="225"
