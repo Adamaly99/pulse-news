@@ -147,28 +147,45 @@ async function pickUnpublishedItem(publishedUrls, publishedUrlFingerprints, publ
   return null;
 }
 
-async function callGemini(apiKey, prompt) {
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          maxOutputTokens: 8192,
-        },
-      }),
-    }
-  );
+async function callGemini(apiKey, prompt, attempt = 1) {
+  const MAX_ATTEMPTS = 3;
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            maxOutputTokens: 8192,
+          },
+        }),
+      }
+    );
 
-  const data = await response.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    throw new Error(`Réponse Gemini invalide : ${JSON.stringify(data).slice(0, 500)}`);
+    if (response.status === 429 || response.status >= 500) {
+      throw new Error(`HTTP ${response.status} (transitoire) de l'API Gemini`);
+    }
+
+    const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) {
+      throw new Error(`Réponse Gemini invalide : ${JSON.stringify(data).slice(0, 500)}`);
+    }
+    return JSON.parse(text);
+  } catch (e) {
+    // Une erreur transitoire (rate limit, 5xx, JSON tronqué) ne doit pas faire perdre tout le
+    // créneau de publication : on retente avec un backoff avant d'abandonner pour de vrai.
+    if (attempt < MAX_ATTEMPTS) {
+      const delayMs = attempt * 5000;
+      console.warn(`⚠️ Appel Gemini échoué (tentative ${attempt}/${MAX_ATTEMPTS}) : ${e.message}. Nouvel essai dans ${delayMs / 1000}s...`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      return callGemini(apiKey, prompt, attempt + 1);
+    }
+    throw e;
   }
-  return JSON.parse(text);
 }
 
 async function run() {
