@@ -1,7 +1,7 @@
 ---
 const { currentSlug, category } = Astro.props;
 
-const allPosts = await Astro.glob('../content/*.md');
+const allPosts = await Astro.glob('../content/**/*.md');
 
 // Filtrer pour exclure l'article courant et privilégier la même catégorie
 const related = allPosts
