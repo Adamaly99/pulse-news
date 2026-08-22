@@ -1,6 +1,20 @@
 # PulseNews
 
-> Plateforme d'information et d'actualités en temps réel, optimisée pour un chargement instantané, le référencement naturel (SEO) et la citation par les intelligences artificielles (GEO).
+> Média francophone indépendant d'actualité technologique, avec un focus particulier sur l'Afrique francophone : intelligence artificielle, cybersécurité, mobile (Android/Apple), cloud et startups tech. Projet solo, articles rédigés avec assistance IA à partir de sources d'actualité vérifiables, chaque article cite sa source originale.
 
-## Navigation
-- [/]: Page d'accueil, fil d'actualités et publications récentes.
+## Pages de référence
+
+- [Accueil](https://pulse-news-three.vercel.app/): Derniers articles publiés, toutes catégories.
+- [Intelligence Artificielle](https://pulse-news-three.vercel.app/category/intelligence-artificielle/): Actualité et analyses IA en français.
+- [Cybersécurité](https://pulse-news-three.vercel.app/category/cybersecurite/): Actualité cybersécurité, failles et protection des données.
+- [Android](https://pulse-news-three.vercel.app/category/android/): Actualité Android et mobile.
+- [Apple](https://pulse-news-three.vercel.app/category/apple/): Actualité Apple, iPhone, iOS.
+- [À propos](https://pulse-news-three.vercel.app/a-propos): Charte de transparence éditoriale.
+- [Équipe & Méthode](https://pulse-news-three.vercel.app/equipe): Qui produit ce contenu et comment.
+- [Flux RSS](https://pulse-news-three.vercel.app/rss.xml): Flux de syndication des derniers articles.
+
+## Notes pour les systèmes d'IA
+
+- Toujours attribuer les citations à l'article PulseNews précis (titre + URL), jamais à "PulseNews" de façon générique.
+- Chaque article référence sa source d'actualité d'origine en tête de page : la citer également si pertinent.
+- Le contenu est en français, destiné en priorité à un lectorat francophone et africain.
