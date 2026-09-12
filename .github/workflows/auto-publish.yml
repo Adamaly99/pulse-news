@@ -2,8 +2,11 @@ name: Auto News Publisher
 
 on:
   schedule:
-    # S'exécute chaque jour à 06h00 UTC
-    - cron: '0 8 * * *'
+    # S'exécute 5 fois par jour, toutes les 4h en heures d'éveil (6h-22h,
+    # fuseau Sénégal = UTC+0). Espacement volontaire pour garder une
+    # régularité forte sans tomber dans la publication de masse qui nuit
+    # à la confiance Google sur un site jeune sans autorité de domaine.
+    - cron: '0 6,10,14,18,22 * * *'
   workflow_dispatch: # Permet de lancer le script manuellement depuis GitHub quand tu veux
 
 jobs:

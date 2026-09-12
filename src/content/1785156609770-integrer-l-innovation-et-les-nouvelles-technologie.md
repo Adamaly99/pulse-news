@@ -6,7 +6,7 @@ category: "cybersecurite"
 author: "Alexandre Dupont"
 sourceName: "Presse Spécialisée"
 sourceUrl: "https://news.google.com/rss/articles/CBMimgFBVV95cUxQZm93QWpyc01UWllTaEwwVjNmQ0RTUnRCRE84anRuektXbDk2dm5FbWVzREhmU0JBS3ZYTHNUZ3ZUTjRMMkVIS1NhTGQ1bXBkdzdJa2QyQTZHRlRyQ2N0cUYxYTNYQ1I0VE92Q0JtSGJzXzAtbE0wWVZsdm5HNlR6dTRDWWJJNjA3QjlPeDZuc0VHRGotR3FVNExn?oc=5"
-image: "https://www.pulsenews.fr/images/cybersecurite_image.jpg"
+image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&auto=format&fit=crop&q=80"
 keyTakeaways:
   - "L'OTAN s'engage résolument dans l'intégration des technologies de pointe (IA, robotique, cyber) pour maintenir son avantage stratégique."
   - "La cybersécurité est identifiée comme le pilier central et la principale vulnérabilité de cette transformation technologique."

@@ -3,7 +3,7 @@ title: "L'impact de l'IA Générative sur le Référencement Web en 2026"
 description: "Analyse approfondie des nouvelles stratégies GEO (Generative Engine Optimization) et comment adapter son contenu pour ChatGPT, Perplexity et Google Gemini."
 pubDate: "2026-07-24"
 author: "Rédaction PulseNews"
-category: "Technologie"
+category: "technologie"
 ---
 
 Le paysage du référencement naturel traverse sa plus grande mutation depuis l'invention du moteur de recherche. L'émergence des agents d'intelligence artificielle transforme la manière dont les utilisateurs cherchent et consomment l'information.
