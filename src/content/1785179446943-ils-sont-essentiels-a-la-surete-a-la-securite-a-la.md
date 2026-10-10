@@ -1,12 +1,12 @@
 ---
 title: "IA Ouverte: L'Alliance Stratégique des Géants Tech Américains"
 description: "Nvidia, Microsoft, Google s'allient pour l'IA ouverte. Analyse des enjeux stratégiques, sécurité, innovation et l'avenir des modèles d'IA face à la régulation."
-pubDate: "2024-07-27T19:10:22.555Z"
+pubDate: "2026-07-27T19:10:22.555Z"
 category: "intelligence-artificielle"
 author: "Alexandre Dupont"
 sourceName: "Presse Spécialisée"
 sourceUrl: "https://news.google.com/rss/articles/CBMi8gJBVV95cUxNaE9JTXBZZkRYOGhodGYxdG85cEJnWTNzam9vbTI4YzVCYnJPR2ZycThIRmpCQ01wT0VOY0VtWmU5RGpHOTFEMkNKcmoyOGp4bUhQQ1BLRGdOYUxwQkEzZENydUtsRnIxbFNYdFh1LUNjeFRMS3g3Vmgza2xLd2N4cUFobDNSOE5hOEtsUkFZVWh1REdIU3FYUlhvaHl2TjJnQ0ZJc1hDRGVhdXZEX0pDRlhJMms4SE1ZOE9sQVBVcEpvR1NWRDJCZGcya2gzODdCeHlJc1U3NGFYdDdWTGRJdwZod0VGU2hjci1SZmFzSzRJNjhlYlIyYU1LdUlDWUV4bmF6Y2VDb0FOUUlUcTdNd1V5TEVqdDBxbTZmOXJOQVRYNzRqVTZpNVloWkJpVkxGQ2tNODRCbWdYM3JidU1iZHBxUVg2Z1VzaUNXLUN3S25Rc2RYQnJ3MW5UQjdyVUlrWTJ3SElEcllsTV8zYmY0dDBB?oc=5"
-image: "https://www.pulsenews.com/images/ai-alliance-open-source.jpg"
+image: "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=1200&auto=format&fit=crop&q=80"
 keyTakeaways:
   - "Une alliance de géants tech promeut l'IA ouverte pour la sûreté, la sécurité et l'innovation."
   - "Le mouvement vise à démocratiser l'accès à l'IA et accélérer son développement collaboratif."
